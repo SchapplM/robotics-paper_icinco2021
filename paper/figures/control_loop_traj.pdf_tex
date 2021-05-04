@@ -1,0 +1,86 @@
+%% Creator: Inkscape inkscape 0.92.3, www.inkscape.org
+%% PDF/EPS/PS + LaTeX output extension by Johan Engelen, 2010
+%% Accompanies image file 'control_loop_traj.pdf' (pdf, eps, ps)
+%%
+%% To include the image in your LaTeX document, write
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics{<filename>.pdf}
+%% To scale the image, write
+%%   \def\svgwidth{<desired width>}
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics[width=<desired width>]{<filename>.pdf}
+%%
+%% Images with a different path to the parent latex file can
+%% be accessed with the `import' package (which may need to be
+%% installed) using
+%%   \usepackage{import}
+%% in the preamble, and then including the image with
+%%   \import{<path to file>}{<filename>.pdf_tex}
+%% Alternatively, one can specify
+%%   \graphicspath{{<path to file>/}}
+%% 
+%% For more information, please see info/svg-inkscape on CTAN:
+%%   http://tug.ctan.org/tex-archive/info/svg-inkscape
+%%
+\begingroup%
+  \makeatletter%
+  \providecommand\color[2][]{%
+    \errmessage{(Inkscape) Color is used for the text in Inkscape, but the package 'color.sty' is not loaded}%
+    \renewcommand\color[2][]{}%
+  }%
+  \providecommand\transparent[1]{%
+    \errmessage{(Inkscape) Transparency is used (non-zero) for the text in Inkscape, but the package 'transparent.sty' is not loaded}%
+    \renewcommand\transparent[1]{}%
+  }%
+  \providecommand\rotatebox[2]{#2}%
+  \newcommand*\fsize{\dimexpr\f@size pt\relax}%
+  \newcommand*\lineheight[1]{\fontsize{\fsize}{#1\fsize}\selectfont}%
+  \ifx\svgwidth\undefined%
+    \setlength{\unitlength}{226.77165354bp}%
+    \ifx\svgscale\undefined%
+      \relax%
+    \else%
+      \setlength{\unitlength}{\unitlength * \real{\svgscale}}%
+    \fi%
+  \else%
+    \setlength{\unitlength}{\svgwidth}%
+  \fi%
+  \global\let\svgwidth\undefined%
+  \global\let\svgscale\undefined%
+  \makeatother%
+  \begin{picture}(1,0.3375)%
+    \lineheight{1}%
+    \setlength\tabcolsep{0pt}%
+    \put(0,0){\includegraphics[width=\unitlength,page=1]{control_loop_traj.pdf}}%
+    \put(0.35858355,0.29008293){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\bm{\int}$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=2]{control_loop_traj.pdf}}%
+    \put(0.60791669,0.28863754){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\bm{\int}$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=3]{control_loop_traj.pdf}}%
+    \put(0.01555694,0.32054176){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\ddot{\bm{q}}_{\mathrm{T}}$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=4]{control_loop_traj.pdf}}%
+    \put(0.44769359,0.32029648){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\dot{\bm{q}}$\end{tabular}}}}%
+    \put(0.71581616,0.32029648){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\bm{q}$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=5]{control_loop_traj.pdf}}%
+    \put(0.83463402,0.29090843){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$h(\bm{q})$\end{tabular}}}}%
+    \put(0.09748898,0.08603134){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\bm{N}(\bm{q}) \bm{v}$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=6]{control_loop_traj.pdf}}%
+    \put(0.1892233,0.26032219){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\ddot{\bm{q}}_{\mathrm{N}}$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=7]{control_loop_traj.pdf}}%
+    \put(0.39745059,0.08871994){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$K_\mathrm{P}$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=8]{control_loop_traj.pdf}}%
+    \put(0.39745059,0.01548653){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$K_\mathrm{D}$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=9]{control_loop_traj.pdf}}%
+    \put(0.68005719,0.08920135){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$-h_{\partial \bm{q}}^\transp(\bm{q})$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=10]{control_loop_traj.pdf}}%
+    \put(0.39745059,0.15998192){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$K_\mathrm{v}$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=11]{control_loop_traj.pdf}}%
+    \put(0.52896423,0.01592789){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\nicefrac{\mathrm{d}}{\mathrm{d}t}$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=12]{control_loop_traj.pdf}}%
+    \put(0.25019727,0.11532898){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\bm{v}$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=13]{control_loop_traj.pdf}}%
+    \put(0.21445389,0.32029648){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\ddot{\bm{q}}$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=14]{control_loop_traj.pdf}}%
+  \end{picture}%
+\endgroup%
