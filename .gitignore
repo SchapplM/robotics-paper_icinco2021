@@ -31,3 +31,7 @@ Thumbs.db
 *.sav
 *.asv
 *.fig
+*.png
+*.mp4
+*.mat
+*.orig

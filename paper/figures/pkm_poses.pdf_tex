@@ -75,13 +75,18 @@
     \put(0.33922702,0.0402747){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{(b)} initial pose case 2 (singular)\end{tabular}}}}%
     \put(0.71002236,0.0402747){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{(c)} final pose (both cases)\end{tabular}}}}%
     \put(0.00732083,0.00935634){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\varphi_z {=} \SI{0}{\degree}, \quad \mathrm{cond}(\bm{J}_{\bm{x}}^{-1}){=}107.5$\end{tabular}}}}%
-    \put(0.33885635,0.00935634){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\varphi_z {=}\SI{33.8}{\degree}, \quad \mathrm{cond}(\bm{J}_{\bm{x}}^{-1}){=}1.8 \cdot 10^6$\end{tabular}}}}%
-    \put(0.71204371,0.00935634){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\varphi_z {=}\SI{-25.0}{\degree}, \quad \mathrm{cond}(\bm{J}_{\bm{x}}^{-1}){=}56.0$\end{tabular}}}}%
+    \put(0.33885635,0.00935634){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\varphi_z {=}\SI{33.8}{\degree}, \quad \mathrm{cond}(\bm{J}_{\bm{x}}^{-1}){=}1.8 \cdot 10^5$\end{tabular}}}}%
+    \put(0.71204371,0.00935634){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\varphi_z {=}\SI{-25.0}{\degree}, \quad \mathrm{cond}(\bm{J}_{\bm{x}}^{-1}){=}56.1$\end{tabular}}}}%
     \put(0.84482536,0.25568728){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25000012}\smash{\begin{tabular}[t]{l}$d_\mathrm{J}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=10]{pkm_poses.pdf}}%
     \put(0.4912389,0.24397181){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25000012}\smash{\begin{tabular}[t]{l}$d_\mathrm{P}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=11]{pkm_poses.pdf}}%
     \put(0.2507738,0.05929527){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25000012}\smash{\begin{tabular}[t]{l}$d_\mathrm{B}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=12]{pkm_poses.pdf}}%
+    \put(0.00310208,0.29237057){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}extensible\end{tabular}}}}%
+    \put(0.00316749,0.2681286){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}cylinder\end{tabular}}}}%
+    \put(0.00317839,0.23401652){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}outer\end{tabular}}}}%
+    \put(0.00316749,0.21326051){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}cyl.\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=13]{pkm_poses.pdf}}%
   \end{picture}%
 \endgroup%

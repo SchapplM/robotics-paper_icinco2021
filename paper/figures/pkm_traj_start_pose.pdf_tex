@@ -1,0 +1,77 @@
+%% Creator: Inkscape inkscape 0.92.3, www.inkscape.org
+%% PDF/EPS/PS + LaTeX output extension by Johan Engelen, 2010
+%% Accompanies image file 'pkm_traj_start_pose.pdf' (pdf, eps, ps)
+%%
+%% To include the image in your LaTeX document, write
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics{<filename>.pdf}
+%% To scale the image, write
+%%   \def\svgwidth{<desired width>}
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics[width=<desired width>]{<filename>.pdf}
+%%
+%% Images with a different path to the parent latex file can
+%% be accessed with the `import' package (which may need to be
+%% installed) using
+%%   \usepackage{import}
+%% in the preamble, and then including the image with
+%%   \import{<path to file>}{<filename>.pdf_tex}
+%% Alternatively, one can specify
+%%   \graphicspath{{<path to file>/}}
+%% 
+%% For more information, please see info/svg-inkscape on CTAN:
+%%   http://tug.ctan.org/tex-archive/info/svg-inkscape
+%%
+\begingroup%
+  \makeatletter%
+  \providecommand\color[2][]{%
+    \errmessage{(Inkscape) Color is used for the text in Inkscape, but the package 'color.sty' is not loaded}%
+    \renewcommand\color[2][]{}%
+  }%
+  \providecommand\transparent[1]{%
+    \errmessage{(Inkscape) Transparency is used (non-zero) for the text in Inkscape, but the package 'transparent.sty' is not loaded}%
+    \renewcommand\transparent[1]{}%
+  }%
+  \providecommand\rotatebox[2]{#2}%
+  \newcommand*\fsize{\dimexpr\f@size pt\relax}%
+  \newcommand*\lineheight[1]{\fontsize{\fsize}{#1\fsize}\selectfont}%
+  \ifx\svgwidth\undefined%
+    \setlength{\unitlength}{212.5984252bp}%
+    \ifx\svgscale\undefined%
+      \relax%
+    \else%
+      \setlength{\unitlength}{\unitlength * \real{\svgscale}}%
+    \fi%
+  \else%
+    \setlength{\unitlength}{\svgwidth}%
+  \fi%
+  \global\let\svgwidth\undefined%
+  \global\let\svgscale\undefined%
+  \makeatother%
+  \begin{picture}(1,0.8)%
+    \lineheight{1}%
+    \setlength\tabcolsep{0pt}%
+    \put(0,0){\includegraphics[width=\unitlength,page=1]{pkm_traj_start_pose.pdf}}%
+    \put(0.73201385,0.2172111){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$s{=}0,\,s{=}7$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=2]{pkm_traj_start_pose.pdf}}%
+    \put(0.08254749,0.17997477){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$1{\leq}s{\leq}2$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=3]{pkm_traj_start_pose.pdf}}%
+    \put(0.07766705,0.03130452){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$3{\leq}s{\leq}4$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=4]{pkm_traj_start_pose.pdf}}%
+    \put(0.76981099,0.09858398){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$5{\leq}s{\leq}6$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=5]{pkm_traj_start_pose.pdf}}%
+    \put(0.73325851,0.0391158){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$4{\leq}s{\leq}5$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=6]{pkm_traj_start_pose.pdf}}%
+    \put(0.03723809,0.10312012){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$2{\leq}s{\leq}3$\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=7]{pkm_traj_start_pose.pdf}}%
+    \put(0.58125605,0.64337585){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}robot base\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=8]{pkm_traj_start_pose.pdf}}%
+    \put(0.72383581,0.1589978){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}trajectory\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=9]{pkm_traj_start_pose.pdf}}%
+    \put(0.22012263,0.44440918){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}moving\end{tabular}}}}%
+    \put(0.25333951,0.39871623){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}platform\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=10]{pkm_traj_start_pose.pdf}}%
+  \end{picture}%
+\endgroup%

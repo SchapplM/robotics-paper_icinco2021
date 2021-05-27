@@ -23,15 +23,16 @@ end
 %#ok<*UNRCH>
 use_mex_functions = true; % use mex functions (much faster)
 usr_recreate_mex = false; % recreate and recompile mex functions from templates
-usr_plot_debug = true; % Create debug plots
+usr_plot_debug = false; % Create debug plots
 usr_plot_objfun = true; % plot the objective function over the redundant coordinate
 usr_plot_robot = true; % plot a sketch of the robot
 usr_save_figures = true; % save figures to disk
-usr_save_anim = true; % create an animation video of the robot motion
+usr_save_anim = false; % create an animation video of the robot motion
 usr_figures_paper = true; % create and save the paper figures
 usr_fast_debug = false; % skip some calculations for fast debugging
 usr_opt_gains = false; % optimize the gains via particle swarm optimization. Has to be postprocessed manually
 usr_select_pose = [1 2]; % 1=normal pose (Sec. 6.1.1), 2=singular pose (Sec. 6.1.2) as starting values
+usr_test_timing = true; % multiple calls of ik functions to determine runtime for evaluation in Sec. 6.1.3.
 
 % Further initialization:
 respath = fileparts(which('ParRob_nullspace_static_pose.m'));
@@ -45,7 +46,7 @@ I_wn_traj = [1 2 5 6]; % Zuordnung zwischen Nebenbedingungen der Einzelpunkt- un
 optimcrit_limits_hyp_deact = 0.9;
 %% Initializiation of the Robot Model
 % Hexapod Robot
-RP = parroblib_create_robot_class('P6RRPRRR14V3G1P4A1', 0.6, [0.2;0.1]);
+RP = parroblib_create_robot_class('P6RRPRRR14V3G1P4A1', 0.6, [0.200;0.100]);
 % Insert design parameters (for Plot)
 for i = 1:RP.NLEG
   RP.Leg(i).DesPar.joint_type(RP.I_qa((RP.I1J_LEG(i):RP.I2J_LEG(i)))) = 5;
@@ -81,10 +82,9 @@ for i = 1:RP.NLEG
   % Setze Geschwindigkeit und Beschleunigung auf moderate Werte, damit
   % die Schrittweite in der Traj.-IK nicht zu groß wird und die Klein-
   % winkelnäherung nicht verletzt wird.
-  velo_scale = 0.6;
-  RP.Leg(i).qDlim = repmat(velo_scale*[-2*pi, 2*pi], RP.Leg(i).NQJ, 1); % 2*pi sind 720deg/s
+  RP.Leg(i).qDlim = repmat([-45, 45]*pi/180, RP.Leg(i).NQJ, 1); % 45deg/s is moderately high
   RP.Leg(i).qDlim(RP.Leg(i).MDH.sigma==1,:) = ...
-    repmat(velo_scale*[-5, 5], sum(RP.Leg(i).MDH.sigma==1), 1); % 5m/s
+    repmat([-2, 2], sum(RP.Leg(i).MDH.sigma==1), 1); % 2m/s
   % Set moderately high acceleration limits which could be feasible for a
   % high-performance parallel robot.
   RP.Leg(i).qDDlim = repmat([-20, 20], RP.Leg(i).NQJ, 1);
@@ -116,7 +116,7 @@ if usr_plot_robot
   s_plot = struct(  'ks_legs', [], 'straight', 0, 'mode', 4);
   RP.plot( q0, X0, s_plot );
 end
-% Orientierung nicht exakt senkrecht, da das oft singulär ist.
+% Select pose with strong tilting angle
 XL = [ [0.05;0.03;0.6]; [30;-30;0]*pi/180 ]';
 
 % TODO: Gelenkgrenzen nicht anpassen. Ist wesentlich aufwändiger in IK
@@ -234,7 +234,7 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
     q_ges = repmat(q_ges,3,1);
     % Debug: Verteilung der Zielfunktionen über die redundante Koordinate
     % plotten. Wird jetzt weiter unten gemacht.
-    figure(10);clf;
+    change_current_figure(10);clf;
     optimcritaxhdl = NaN(3,1);
     for i = 1:4
       optimcritaxhdl(i) = subplot(2,2,i); hold on;
@@ -251,7 +251,7 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
     sgtitle(sprintf('Objective Function Point %d', k));
     linkxaxes
     if usr_plot_debug
-      figure(11);clf;
+      change_current_figure(11);clf;
       for i = 1:RP.NJ
         subplot(6,6,i); hold on;
         plot(x_test_ges([1; end],6)*180/pi, qlim(i,1)*[1;1], 'r-');
@@ -266,6 +266,11 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
   end
 
   %% Posen-Optimierung durchführen
+  I_sing = islocalmax( h_ges(:,4) );
+  I_onerev = x_test_ges(:,6)>-pi & x_test_ges(:,6) < pi;
+  I_sing2 = I_sing & I_onerev & h_ges(:,4) > 1e3;
+  fprintf(['Numeric detection of singularities from global distribution: ', ...
+    'at phi_z=[%s] deg\n'], disp_array(x_test_ges(I_sing2,6)'*180/pi, '%1.2f'));
   % Manually selected values based on the given pose X0
   x6_l_range = [0, 33.8]*pi/180;
   x6_l_range = unique(x6_l_range, 'stable');
@@ -277,10 +282,11 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
       % Erstes Beispiel (normale Bewegung). Benutze Antriebs-Koordinaten
       thresh_ns_qa = 1e3;
     else
-      % Zweites Beispiel (aus Singularität). Benutze 
+      % Zweites Beispiel (aus Singularität). Benutze vollständige
+      % Koordinaten
       thresh_ns_qa = 1;
     end
-
+    fprintf('Start Inverse Kinematics for Pose %d (phiz0=%1.1fdeg)\n', l, 180/pi*x_l(6));
     % Inverse Kinematik zum Startpunkt
     RP.update_EE_FG(I_EE_full,I_EE_full); % Roboter auf 3T3R einstellen
     s_ep_start = s_ep;
@@ -346,8 +352,8 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
     [q_ep_withlimits, Phi,~,Stats_ep_withlimits] = RP.invkin4(x_l, qs, s_ep_withlimits);
     x_ep_withlimits = RP.fkineEE_traj(q_ep_withlimits')';
     assert(all(abs(Phi)<1e-9), 'IK does not converge in test');
-    fprintf(['Best condition number in position-level IK: %1.1f (phiz=%1.1f deg). ', ...
-      'While considering joint limits %1.1f (phiz=%1.1f deg). Start at %1.1f\n'], ...
+    fprintf(['Best condition number in position-level IK: h=%1.1f (phiz=%1.1f deg). ', ...
+      'While considering joint limits h=%1.1f (phiz=%1.1f deg). Start at h=%1.1f\n'], ...
       Stats_ep_nolimits.h(Stats_ep_nolimits.iter+1,1+4), ...
       180/pi*x_ep_nolimits(6), ...
       Stats_ep_withlimits.h(Stats_ep_withlimits.iter+1,1+4), ...
@@ -492,12 +498,59 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
       s_ep_ii.wn = wn_traj(I_wn_traj);
       s_ep_ii.wn(s_ep_ii.wn~=0) = 1; % Immer auf 1 setzen. Nur eine Zielfunktion betrachtet. Ist für Summe egal.
       s_ep_ii.optimcrit_limits_hyp_deact = optimcrit_limits_hyp_deact; % Hyperbolische Funktion nur nahe an Grenzen
-      t1 = tic();
+      t_ep = NaN(51,1);
       if ii == 1 % nur ein mal als Vergleich
+        for iit = 1:(1+50*usr_test_timing)
+        t1 = tic();
         [q_ep_ii, Phi,~,Stats_ep] = RP.invkin4(x_l, qs, s_ep_ii);
+        t_ep(iit) = toc(t1);
+        end
+        if usr_test_timing
+          t_ps = t_ep / Stats_ep.iter;
+          fprintf(['Timing Evaluation of position-level kinematics: in total: ', ...
+            '\n\tavg %1.2fms, std %1.6fms, n=%d, data [%s]ms (ignore first); per sample: ', ...
+            '\n\tavg %1.2fms, std %1.6fms, n=%d, data [%s]ms (ignore first); %d samples\n'], ...
+            1e3*mean(t_ep(2:end)), 1e3*std(t_ep(2:end)), length(t_ep(2:end)), disp_array(1e3*t_ep(:)', '%1.2f'), ...
+            1e3*mean(t_ps(2:end)), 1e3*std(t_ps(2:end)), length(t_ps(2:end)), disp_array(1e3*t_ps(:)', '%1.2f'), Stats_ep.iter);
+          % re-generate function to always compute all joints of the robot
+          fname = which('P6RRPRRR14V3_invkin3.m');
+          fid  = fopen(fname,'r');
+          f=fread(fid,'*char')';
+          fclose(fid);
+          % change line which determines which gradient calculation to use
+          f = strrep(f,'if all(abs(Phi)<1e-3) && taskred_rotsym','if false % for testing the timing using always all joint variations');
+          fid  = fopen(fname,'w');
+          fprintf(fid,'%s',f);
+          fclose(fid);
+          % compile modified ik function
+          matlabfcn2mex({'P6RRPRRR14V3_invkin3'});
+          % Test timing again
+          t_ep2 = NaN(50,1);
+          for iit = 1:(1+49*usr_test_timing)
+          t1 = tic();
+          [q_ep_ii2, Phi2,~,Stats_ep2] = RP.invkin4(x_l, qs, s_ep_ii);
+          t_ep2(iit) = toc(t1);
+          % Do not test if the result stays the same. The calculation is
+          % different, since the platform pose is not regarded in this case
+%           assert(all(abs(q_ep_ii2-q_ep_ii)<1e-8), 'result using the different nullspaces has to be equal');
+          end
+          t_ps2 = t_ep2 / Stats_ep2.iter;
+          fprintf(['Timing Evaluation of position-level kinematics without ', ...
+            'using efficient form of gradient approximation: in total: ', ...
+            '\n\tavg %1.2fms, std %1.6fms, n=%d, data [%s]ms; per sample: ', ...
+            '\n\tavg %1.2fms, std %1.6fms, n=%d, data [%s]ms; %d samples\n'], ...
+            1e3*mean(t_ep2), 1e3*std(t_ep2), length(t_ep2), disp_array(1e3*t_ep2(:)', '%1.2f'), ...
+            1e3*mean(t_ps2), 1e3*std(t_ps2), length(t_ps2), disp_array(1e3*t_ps2(:)', '%1.2f'), Stats_ep2.iter);
+          % Change function back to the original version
+          parroblib_create_template_functions({RP.mdlname(1:end-2)}, false, false);
+          matlabfcn2mex({[RP.mdlname(1:end-6), '_invkin3']});
+        end
       end
-      t_ep = toc(t1);
-      assert(all(abs(Stats_ep.PHI(1,RP.I_constr_red))<1e-9), 'Residuum im ersten Schritt muss Null sein');
+      assert(all(abs(Stats_ep.PHI(1,RP.I_constr_red))<1e-9), ...
+        'Residuum im ersten Schritt muss Null sein');
+      assert(all(all(abs(Stats_ep.PHI(1:1+Stats_ep.iter,RP.I_constr_red))<1e-3)), ...
+        'Residuum während der Annäherung an Ziel muss klein bleiben. Aktuell max. %1.1e', ...
+        max(max(Stats_ep.PHI(1:1+Stats_ep.iter,RP.I_constr_red))));
       % IK mit Trajektorien-Verfahren berechnen. Setze virtuelle
       % Trajektorie, die keine Soll-Vorgaben hat. Dadurch entsteht eine
       % reine Nullraumbewegung.
@@ -512,9 +565,12 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
       assert(length(Traj_t)==n, 'Zeit-Basis der virtuellen Trajektorie ist falsch');
       s_traj_ii = struct('wn', wn_traj);
       s_traj_ii.thresh_ns_qa = thresh_ns_qa;
+      t_traj = NaN(51,1);
+      for iit = 1:(1+50*usr_test_timing)
       t1 = tic();
       [Q_ii, QD_ii, QDD_ii, Phi_ii,~,~,~,Stats_traj] = RP.invkin2_traj(Traj_X, Traj_XD, Traj_XDD, Traj_t, qs, s_traj_ii);
-      t_traj = toc(t1);
+      t_traj(iit) = toc(t1);
+      end
       % Kürze die Trajektorie, falls Bewegung vorzeitig abgeklungen ist
       % (oder abgebrochen wurde)
       I_firstnan = find(any(isnan(QD_ii),2),1,'first');
@@ -525,9 +581,25 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
         I_noacc = all(abs(QDD_ii)<1e-8,2);
         I_finishacc = find(I_noacc==0,1,'last');
       end
+      if usr_test_timing
+        I_lastcalc = min([I_firstnan, size(QD_ii,1)]);
+        t_ps = t_traj / I_lastcalc;
+        fprintf(['Timing Evaluation of trajectory kinematics:', ...
+          '\n\tin total: avg %1.2fs, std %1.6fs, n=%d, data [%s]s (ignore first);', ...
+          '\n\tper sample: avg %1.2fms, std %1.6fms, data [%s]ms (ignore first); %d samples\n'], ...
+          mean(t_traj(2:end)), std(t_traj(2:end)), length(t_traj(2:end)), disp_array(t_traj(:)', '%1.2f'), ...
+          1e3*mean(t_ps(2:end)), 1e3*std(t_ps(2:end)), disp_array(1e3*t_ps(:)', '%1.2f'), I_lastcalc);
+        % Run the code without mex and with the profiler to assess where
+        % the computation time is spent in the code.
+        RP.fill_fcn_handles(false);
+        profile on
+        RP.invkin2_traj(Traj_X, Traj_XD, Traj_XDD, Traj_t, qs, s_traj_ii);
+        profsave(profile('info'),fullfile(respath,sprintf('profile_results_case%d_set%d', l, ii)));
+        if use_mex_functions, RP.fill_fcn_handles(true); end % set back to compiled functions
+      end
       fprintf(['Pt. %d/ Ori. %d/ Case %d. IK computed: %d steps position-', ...
         'level-IK (%1.1fs; %1.1fms); %d steps Traj.-IK (%1.1fs; %1.1fms)\n'], k, l, ...
-        ii, Stats_ep.iter, t_ep, 1e3*t_ep/Stats_ep.iter, I_finishacc, t_traj, 1e3*t_traj/I_finishacc);
+        ii, Stats_ep.iter, t_ep(1), 1e3*t_ep(1)/Stats_ep.iter, I_finishacc, t_traj(1), 1e3*t_traj(1)/I_finishacc);
       Q_ii = Q_ii(1:I_finishacc,:);
       QD_ii = QD_ii(1:I_finishacc,:);
       QDD_ii = QDD_ii(1:I_finishacc,:);
@@ -594,7 +666,8 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
         ResStat.Error(ii_restab) = 5;
         raise_error_h = true;
       end
-      if any(abs(reserr_h_sum) > 1e-3)
+      if any(abs(reserr_h_sum) > 1e-3) && ...
+          ~(l==1 && ii==1) % do not show warning in case of voluntary oscillations
         warning('Zielfunktion weicht absolut bei beiden Methoden ab. Aber kein Fehler, da eventuell auch Verzweigung der Lösung.');
       end
       if raise_error_h
@@ -626,7 +699,7 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
           'verletzt (qDD norm: %1.1f bis %1.1f)'], min(QDD_ii_norm(:)), ...
           max(QDD_ii_norm(:)));
       end
-      if any(QD_ii_norm(:) < 0) || any(QD_ii_norm(:)>1)
+      if any(QD_ii_norm(:) < -0.01) || any(QD_ii_norm(:)>1.01)
         warning(['Gelenkgeschwindigkeitsgrenzen werden in Traj. ', ...
           'verletzt (qD norm: %1.4f bis %1.4f)'], min(QD_ii_norm(:)), ...
           max(QD_ii_norm(:)));
@@ -646,6 +719,28 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
     end % ii (Berechnung der Nullraumbewegung)
     save(fullfile(respath, sprintf('pkm_nullspace_results_case%d.mat', l)));
     %% Create Debug plots
+    % Create a virtual time base for the position-level IK
+    % Simple case: Equidistant and normalized to trajectory end time. This
+    % works well for high velocities in the trajectory.
+%     Stats_ep.T = (0:1:Stats_ep.iter)'/(Stats_ep.iter)*Traj_t(end);
+    % use maximal joint velocity to create the time base
+    Q_ep = Stats_ep.Q(1:1+Stats_ep.iter,:);
+    Qdiff_ep = diff(Q_ep);
+    Tdiff_ep_allj = abs(Qdiff_ep)./repmat(abs(qDlim(:,2))', size(Qdiff_ep,1), 1);
+    Tdiff_ep = max(Tdiff_ep_allj, [], 2);
+    % sample to 1ms steps
+    Tdiff_ep_sampled = max([Tdiff_ep, repmat(1e-3, size(Tdiff_ep,1), 1)], [], 2);
+    Tdiff_ep_sampled = ceil(Tdiff_ep_sampled/1e-3)*1e-3;
+    Stats_ep.T = [0;cumsum(Tdiff_ep_sampled)];
+    Stats_ep.QD = [zeros(1,RP.NJ); diff(Stats_ep.Q(1:Stats_ep.iter+1,:))...
+                  ./repmat(diff(Stats_ep.T), 1, RP.NJ); ...
+                  zeros(size(Stats_ep.Q,1)-Stats_ep.iter-1,RP.NJ)];
+    % append time steps until the end (for markers in later plots)
+    T_add = Stats_ep.T(end)+1e-3:1e-3:(Stats_ep.T(end)+ size(Stats_ep.Q,1)*1e-3);
+    n_rest = size(Stats_ep.Q,1)-Stats_ep.iter-1;
+    Stats_ep.Q(1+Stats_ep.iter+1:end,:) = repmat(Stats_ep.Q(1+Stats_ep.iter,:), n_rest, 1);
+    Stats_ep.h(1+Stats_ep.iter+1:end,:) = repmat(Stats_ep.h(1+Stats_ep.iter,:), n_rest, 1);
+    Stats_ep.T(1+Stats_ep.iter+1:size(Stats_ep.Q,1),:) = T_add(1:n_rest);
     legend_entries = {'ii=1', 'ii=2', 'ii=3'};
     for ii = 1:n_cases_ii % Plotten (Debug)
       filename_pre = sprintf('pkm_nullspace_motion_ori%d_case%d_', l, ii);
@@ -658,24 +753,25 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
       X_ii = X_ii_all{ii};
       % Vergleich
       if usr_plot_debug
-        % Create a virtual time base for the position-level IK
-        progr_ep = (0:1:Stats_ep.iter)'/(Stats_ep.iter)*Traj_t(end);
         % Bild: Gelenkpositionen
         change_current_figure(1);set(1,'Name','q','NumberTitle','off');
         if ii == 1, clf; end
         for i = 1:RP.NJ
           subplot(6,6,i); hold on;
           if ii == 1
-            plot(progr_ep, Stats_ep.Q_norm(1:Stats_ep.iter+1,i));
+            q_i_int = Stats_ep.Q(1,i)+cumtrapz(Stats_ep.T, Stats_ep.QD(:,i));
+            q_i_int_norm = (q_i_int-qlim(i,1))/(qlim(i,2)-qlim(i,1));
+            plot(Stats_ep.T(1:Stats_ep.iter+1), Stats_ep.Q_norm(1:Stats_ep.iter+1,i));
+            plot(Stats_ep.T, q_i_int_norm);
           end
           plot(Traj_t, Q_ii_norm(:,i));
           ylabel(sprintf('q %d (norm)', i)); grid on;
           xlabel('Time in s');
         end
         linkxaxes
-        legend(['Pos.-Level',legend_entries(1:ii)]);
+        legend(['Pos.-Level','Pos.-Level (int.)',legend_entries(1:ii)]);
         sgtitle('Joint Positions');
-        if usr_save_figures
+        if usr_save_figures && ii == 2
           saveas(1, fullfile(respath, [filename_pre,'jointpositions.fig']));
           saveas(1, fullfile(respath, [filename_pre,'jointpositions.png']));
         end
@@ -685,14 +781,19 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
         if ii == 1, clf; end
         for i = 1:RP.NJ
           subplot(6,6,i); hold on;
+          if ii == 1
+            qD_ep_i = Stats_ep.QD(:,i);
+            qD_ep_i_norm = (qD_ep_i-qDlim(i,1))/(qDlim(i,2)-qDlim(i,1));
+            plot(Stats_ep.T, qD_ep_i_norm);
+          end
           plot(Traj_t, QD_ii_norm(:,i));
           ylabel(sprintf('qD %d (norm)', i)); grid on;
           xlabel('Time in s');
         end
         linkxaxes
-        legend(legend_entries(1:ii));
+        legend(['Pos.-Level',legend_entries(1:ii)]);
         sgtitle('Joint Velocities (Traj.-IK)');
-        if usr_save_figures
+        if usr_save_figures && ii == 2
           saveas(11, fullfile(respath, [filename_pre,'jointvelocities.fig']));
           saveas(11, fullfile(respath, [filename_pre,'jointvelocities.png']));
         end
@@ -709,7 +810,7 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
         linkxaxes
         legend(legend_entries(1:ii));
         sgtitle('Joint Accelerations (Traj.-IK)');
-        if usr_save_figures
+        if usr_save_figures && ii == 2
           saveas(12, fullfile(respath, [filename_pre,'jointaccelerations.fig']));
           saveas(12, fullfile(respath, [filename_pre,'jointaccelerations.png']));
         end
@@ -720,7 +821,7 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
         for i = 1:4
           subplot(2,2,i); hold on;
           if ii == 1
-            plot(progr_ep(1:end-1), Stats_ep.h(1:Stats_ep.iter,1+i));
+            plot(Stats_ep.T(1:Stats_ep.iter), Stats_ep.h(1:Stats_ep.iter,1+i));
           end
           plot(Traj_t, Stats_traj_h(:,1+I_wn_traj(i)));
           ylabel(sprintf('h %d (%s) (wn=%1.1f)', i, hnames{i}, s_ep_ii.wn(i))); grid on;
@@ -729,7 +830,7 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
         linkxaxes
         legend(['Pos.-Level',legend_entries(1:ii)]);
         sgtitle('Objectives of IK');
-        if usr_save_figures
+        if usr_save_figures && ii == 2
           saveas(2, fullfile(respath, [filename_pre,'objectives.fig']));
           saveas(2, fullfile(respath, [filename_pre,'objectives.png']));
         end
@@ -738,7 +839,7 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
         change_current_figure(25);
         if ii == 1, clf; end
         if ii == 1
-          plot(progr_ep, 180/pi*Stats_ep.X(1:Stats_ep.iter+1,6));
+          plot(Stats_ep.T(1:Stats_ep.iter+1), 180/pi*Stats_ep.X(1:Stats_ep.iter+1,6));
         end
          hold on;
         plot(Traj_t, 180/pi*X_ii(:,6));
@@ -746,7 +847,7 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
         xlabel('Time in s');
         ylabel('Redundant coordinate x6 in deg');
         set(25,'Name','x6','NumberTitle','off');
-        if usr_save_figures
+        if usr_save_figures && ii == 2
           saveas(25, fullfile(respath, [filename_pre,'redcoordX.fig']));
           saveas(25, fullfile(respath, [filename_pre,'redcoordX.png']));
         end
@@ -841,7 +942,7 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
     %% Create Robot Plot for Paper: Fig. 1 (Sub-Figures)
     if usr_figures_paper
       for ii = 1:2
-        figure(100);clf;
+        change_current_figure(100);clf;
         set(100,'Name','Rob','NumberTitle','off');
         hold on;grid on;
         xlabel('x in m');ylabel('y in m');zlabel('z in m');
@@ -859,7 +960,12 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
           x = Stats_ep.X(Stats_ep.iter+1,:)';
           q = Stats_ep.Q(Stats_ep.iter+1,:)';
         end
+        % Set EE transformation to avoid occlusion of the platform frame
+        % by the platform visualisation
+        r_P_E_backup = RP.r_P_E;
+        RP.update_EE([0;0;10e-3]);
         RP.plot( q, x, s_plot );
+        RP.update_EE(r_P_E_backup);
         ch = get(gca, 'Children');
         for jj = 1:length(ch)
           % KS-Texte entfernen
@@ -871,6 +977,23 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
         end
         figure_format_publication(gca);
         set(gca, 'Box', 'off');
+        % Remove all transparency. Produces problems in png image export
+        ch = get(gca, 'Children');
+        for jj = 1:length(ch)
+          if strcmp(ch(jj).Type, 'surface') || strcmp(ch(jj).Type, 'patch')
+            % Remove transparency (set everything to non-transparent)
+            set(ch(jj), 'FaceAlpha', 1.0, 'EdgeAlpha', 1.0);
+            % set edge color to face color (for robot link elements)
+            if ~isempty(regexp(get(ch(jj), 'DisplayName'), '^Leg_([\d]+)_Link_([\d]+)$', 'match'))
+              set(ch(jj), 'FaceColor', get(ch(jj), 'EdgeColor'));
+            end
+            % remove the cuboid representation of prismatic joints
+            if ~isempty(regexp(get(ch(jj), 'DisplayName'), '^Leg_([\d]+)_Joint_3$', 'match'))
+              delete(ch(jj));
+            end
+          end
+        end
+        
         set(100, 'windowstyle', 'normal');
         set_size_plot_subplot(100, ...
           6,6,gca,...
@@ -893,16 +1016,18 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
               [231 123 41 ]/255;... %imesorange
               [0 0 0];... % schwarz
               [200 211 23 ]/255];... %imesgrün
-    format = cell(4,4);
+    format = cell(4,5);
     markerlist = {'^', 'o', 'x', 's'};
+    linewidth = 1.5;
     markernumber = [12, 25, 18, 45];
     for fff = 1:1+n_cases_ii
       format{fff,1} = colors(fff,:);
       format{fff,2} = markerlist{fff};
       format{fff,3} = '-';
       format{fff,4} = markernumber(fff);
+      format{fff,5} = linewidth;
     end
-    linewidth = 1.5;
+
     linhdl1 = NaN(1+n_cases_ii,1);
     for ii = 1:n_cases_ii % Plotten (Paper)
       Traj_t = Traj_t_all{ii};
@@ -913,27 +1038,27 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
       X_ii = X_ii_all{ii};
       %% Kombiniertes Bild: 3 Teile: h/t, phiz/t, h/phiz
       if usr_figures_paper
-        fighdl = figure(1000); set(1000, 'Name', sprintf('case%d_overview', l), 'numbertitle', 'off');
+        fighdl = change_current_figure(1000); set(1000, 'Name', sprintf('case%d_overview', l), 'numbertitle', 'off');
         if strcmp(get(fighdl, 'windowstyle'), 'docked'), set(fighdl, 'windowstyle', 'normal'); end
         if ii == 1, clf; end
         axhdl = NaN(1,3);
         axhdl(1)=subplot(1,3,1); hold on; % h/t
         if ii == 1
-          linhdl1(1) = plot(progr_ep(1:end-1)/2, Stats_ep.h(1:Stats_ep.iter,1+4), ...
+          linhdl1(1) = plot(Stats_ep.T, Stats_ep.h(:,1+4), ...
             'Color', colors(1,:), 'linewidth', linewidth);
         end
         linhdl1(1+ii) = plot(Traj_t, Stats_traj_h(:,1+I_wn_traj(4)), ...
           'Color', colors(1+ii,:), 'linewidth', linewidth);
-        ylabel(sprintf('$h=\\mathrm{cond}(\\boldmath{J}_{\\boldmath{x}})$'), ...
+        ylabel(sprintf('$h=\\mathrm{cond}$(\\boldmath${J}_{x}$)'), ...
           'interpreter', 'latex');
         grid on;
         xlabel('time in s');
         if l == 1
-          xlim([0, 2]);
-          ylim([53, 110]);
+          set(axhdl(1), 'xlim', [0, 3]);
+          set(axhdl(1), 'ylim', [53, 110]);
         else
-          xlim([0, 4]);
-          ylim([48, 260]);
+          set(axhdl(1), 'xlim', [0, 3]);
+          set(axhdl(1), 'ylim', [47, 210]);
         end
         if ii == n_cases_ii
           line_format_publication(linhdl1, format);
@@ -942,7 +1067,7 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
         if ii == 1, linhdl=NaN(n_cases_ii+1,1); end
         axhdl(2)=subplot(1,3,2); hold on; % phiz/t
         if ii == 1
-          linhdl(1) = plot(progr_ep/2, 180/pi*Stats_ep.X(1:Stats_ep.iter+1,6), ...
+          linhdl(1) = plot(Stats_ep.T, 180/pi*Stats_ep.X(:,6), ...
             'Color', colors(1,:), 'linewidth', linewidth);
         end
         linhdl(1+ii) = plot(Traj_t, 180/pi*X_ii(:,6), ...
@@ -950,12 +1075,11 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
         ylabel(sprintf('$\\varphi_z$ in deg'), 'interpreter', 'latex');
         grid on;
         xlabel('time in s');
+        set(axhdl(2), 'xlim', get(axhdl(1), 'xlim'));
         if l == 1
-          xlim([0, 2]);
-          ylim([-45, 5]);
+          set(axhdl(2), 'ylim', [-30, 5]);
         else
-          xlim([0, 4]);
-          ylim([-40, 40]);
+          set(axhdl(2), 'ylim', [-30, 35]);
         end
         if ii == n_cases_ii
           linleghdl = line_format_publication(linhdl, format);
@@ -978,31 +1102,67 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
         end
         plot(180/pi*X_ii(end,6), Stats_traj_h(end,1+I_wn_traj(4)), ...
           markerlist{1+ii}, 'Color', colors(1+ii,:), 'linewidth', linewidth);
-        ylabel(sprintf('$h=\\mathrm{cond}(\\boldmath{J}_{\\boldmath{x}})$'), ...
+        % https://de.mathworks.com/matlabcentral/answers/100493-how-do-i-obtain-bold-formatted-mathematical-expressions-in-matlab-using-latex
+        ylabel(sprintf('$h=\\mathrm{cond}$(\\boldmath${J}_{x}$)'), ...
           'interpreter', 'latex');
         xlabel(sprintf('$\\varphi_z$ in deg'), 'interpreter', 'latex');
         grid on;
-        xlim(get(axhdl(2), 'ylim'));
-        ylim(get(axhdl(1), 'ylim'));
+        set(axhdl(3), 'xlim', get(axhdl(2), 'ylim'));
+        set(axhdl(3), 'YScale', 'log')
         if l == 1
-          xlim([-200, 200]);
-          ylim([min(h_ges(:,4)), 120])
-          ylim([min(h_ges(:,4)), max(h_ges(:,4))])
-          set(axhdl(3), 'YScale', 'log')
+          set(axhdl(3), 'xlim', [-200, 200]);
           set(axhdl(3), 'xtick', [-180, -90, 0, 90, 180]);
-          set(axhdl(3), 'ytick', [1e2, 1e3, 1e4, 1e5]);
           xtickangle(0) % werden Standardmäßig schräg gestellt. Wieder gerade machen.
+          set(axhdl(3), 'ylim', [min(h_ges(:,4))-1, 2e4]);%max(h_ges(:,4))]);
         else
-          set(gca, 'xtick', [-30, 0, 30]);
+          set(axhdl(2), 'ytick', [-30, 0, 30]);
+          set(axhdl(3), 'xtick', [-30, 0, 30]);
+          set(axhdl(3), 'ylim', [min(h_ges(:,4))-1, max(h_ges(:,4))*1.3]);%max(h_ges(:,4))]);
         end
-
+        set(axhdl(3), 'ytick', [1e2, 1e3, 1e4, 1e5]);
         if ii == n_cases_ii
+          % text with subfig number (a/b/c)
+          thdl = NaN(3,1);
+          for jth = 1:3
+            axes(axhdl(jth)); %#ok<LAXES>
+            thdl(jth) = text(0,0,sprintf('(%s)', char(96+jth)));
+          end
+          for jth = 1:3
+            [~, ~, x_pos] = get_relative_position_in_axes(axhdl(jth), 'x', -1.4);
+            [~, ~, y_pos] = get_relative_position_in_axes(axhdl(jth), 'y', -1.25);
+            set(thdl(jth), 'Position', [x_pos, y_pos, 0]);
+            set(thdl(jth), 'FontWeight', 'bold');
+          end
+          % create zoom box into the existing axis object. Has to be after
+          % resizing the plot, because this changes the z order
+          if l == 1
+            zoomhdl1 = add_zoom_axis(axhdl(1), [1.5, 2.8; 55.5, 58.5]);
+            set(zoomhdl1, 'position', [0.15, 0.44, 0.17, 0.45]);
+            arrhdl1 = annotation(fighdl,'arrow');
+            set(arrhdl1, 'position', [0.25, 0.43, -0.00, -0.17]);
+            zoomhdl2 = add_zoom_axis(axhdl(2), [1.5, 2.8; -28, -20]);
+            set(zoomhdl2, 'position', [0.47, 0.49, 0.17, 0.40]);
+            arrhdl2 = annotation(fighdl,'arrow');
+            set(arrhdl2, 'position', [0.58, 0.48, -0.00, -0.1]);
+          end
+          if l == 2
+            zoomhdl1 = add_zoom_axis(axhdl(1), [1, 2.5; 51, 70]);
+            set(zoomhdl1, 'position', [0.18, 0.45, 0.14, 0.45]);
+            arrhdl1 = annotation(fighdl,'arrow');
+            set(arrhdl1, 'position', [0.24, 0.43, -0.0, -0.14]);
+            zoomhdl2 = add_zoom_axis(axhdl(2), [1.6, 2.2; -28, -19]);
+            set(zoomhdl2, 'position', [0.50, 0.50, 0.15, 0.40]);
+            arrhdl2 = annotation(fighdl,'arrow');
+            set(arrhdl2, 'position', [0.58, 0.49, -0.00, -0.19]);
+          end
+          drawnow();
           figure_format_publication(axhdl);
           set_size_plot_subplot(fighdl, ...
-            15.8, 6, ...
+            15.8, 5.5, ...
             axhdl, ...
-            0.07, 0.01, 0.12, 0.15, ... % l r u d
+            0.07, 0.01, 0.09, 0.15, ... % l r u d
             0.07, 0.011) % x y
+          drawnow();
           if l == 1
             lh = legend(linleghdl, {'position-level IK', 'trajectory IK with $K_\mathrm{D}=K_\mathrm{v}=0$', ...
               'trajectory IK with tuned gains'}, 'interpreter', 'latex');
@@ -1011,10 +1171,11 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
               'trajectory IK with gain set 2'}, 'interpreter', 'latex');
           end
           set(lh, 'orientation', 'horizontal', 'position', ...
-            [0.07,0.92,0.90,0.05]); % x y b h
+            [0.07,0.94,0.92,0.05]); % x y b h
+          % Do not plot an additional legend for the performance criterion
           if l == 1
             lh3 = legend(linhdl3, {'initial value', 'computed offline'});
-            set(lh3, 'position', [0.81,0.6,0.1,0.05], 'orientation', 'vertical'); % x y b h
+            set(lh3, 'position', [0.7831    0.7134    0.1922    0.1383], 'orientation', 'vertical'); % x y b h
           end
         end
         if ii == n_cases_ii && usr_save_figures

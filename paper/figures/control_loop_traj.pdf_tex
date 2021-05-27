@@ -50,37 +50,37 @@
   \global\let\svgwidth\undefined%
   \global\let\svgscale\undefined%
   \makeatother%
-  \begin{picture}(1,0.3375)%
+  \begin{picture}(1,0.275)%
     \lineheight{1}%
     \setlength\tabcolsep{0pt}%
     \put(0,0){\includegraphics[width=\unitlength,page=1]{control_loop_traj.pdf}}%
-    \put(0.35858355,0.29008293){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\bm{\int}$\end{tabular}}}}%
+    \put(0.29905224,0.22393608){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\bm{\int}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=2]{control_loop_traj.pdf}}%
-    \put(0.60791669,0.28863754){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\bm{\int}$\end{tabular}}}}%
+    \put(0.60791669,0.22249069){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\bm{\int}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=3]{control_loop_traj.pdf}}%
-    \put(0.01555694,0.32054176){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\ddot{\bm{q}}_{\mathrm{T}}$\end{tabular}}}}%
+    \put(0.01555694,0.25439491){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\ddot{\bm{q}}_{\mathrm{T}}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=4]{control_loop_traj.pdf}}%
-    \put(0.44769359,0.32029648){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\dot{\bm{q}}$\end{tabular}}}}%
-    \put(0.71581616,0.32029648){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\bm{q}$\end{tabular}}}}%
+    \put(0.44769359,0.25414963){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\dot{\bm{q}}$\end{tabular}}}}%
+    \put(0.71581616,0.25414963){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\bm{q}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=5]{control_loop_traj.pdf}}%
-    \put(0.83463402,0.29090843){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$h(\bm{q})$\end{tabular}}}}%
-    \put(0.09748898,0.08603134){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\bm{N}(\bm{q}) \bm{v}$\end{tabular}}}}%
+    \put(0.83463402,0.22476158){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$h(\bm{q})$\end{tabular}}}}%
+    \put(0.09748898,0.01988449){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\bm{N}(\bm{q}) \bm{v}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=6]{control_loop_traj.pdf}}%
-    \put(0.1892233,0.26032219){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\ddot{\bm{q}}_{\mathrm{N}}$\end{tabular}}}}%
+    \put(0.1892233,0.19417534){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\ddot{\bm{q}}_{\mathrm{N}}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=7]{control_loop_traj.pdf}}%
-    \put(0.39745059,0.08871994){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$K_\mathrm{P}$\end{tabular}}}}%
+    \put(0.39745059,0.09533463){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$K_\mathrm{P}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=8]{control_loop_traj.pdf}}%
-    \put(0.39745059,0.01548653){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$K_\mathrm{D}$\end{tabular}}}}%
+    \put(0.39745059,0.02210121){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$K_\mathrm{D}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=9]{control_loop_traj.pdf}}%
-    \put(0.68005719,0.08920135){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$-h_{\partial \bm{q}}^\transp(\bm{q})$\end{tabular}}}}%
+    \put(0.68005719,0.09581604){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$-h_{\partial \bm{q}}^\transp(\bm{q})$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=10]{control_loop_traj.pdf}}%
-    \put(0.39745059,0.15998192){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$K_\mathrm{v}$\end{tabular}}}}%
+    \put(0.39745059,0.1665966){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$K_\mathrm{v}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=11]{control_loop_traj.pdf}}%
-    \put(0.52896423,0.01592789){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\nicefrac{\mathrm{d}}{\mathrm{d}t}$\end{tabular}}}}%
+    \put(0.52896423,0.02254257){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\nicefrac{\mathrm{d}}{\mathrm{d}t}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=12]{control_loop_traj.pdf}}%
-    \put(0.25019727,0.11532898){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\bm{v}$\end{tabular}}}}%
+    \put(0.25019727,0.04918213){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\bm{v}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=13]{control_loop_traj.pdf}}%
-    \put(0.21445389,0.32029648){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\ddot{\bm{q}}$\end{tabular}}}}%
+    \put(0.21445389,0.25414963){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\ddot{\bm{q}}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=14]{control_loop_traj.pdf}}%
   \end{picture}%
 \endgroup%
