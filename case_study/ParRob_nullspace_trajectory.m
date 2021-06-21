@@ -1286,6 +1286,7 @@ set(lh, 'orientation', 'horizontal', 'position', [0.1,0.92,0.8,0.05]);
 drawnow();
 if usr_save_figures
 t1 = tic();
+saveas(fighdl, fullfile(respath, ['nullspace_traj','.fig']));
 % For this to work, the Java heap memory has to be high enough. For
 % high-resolution image 2GB not enough, 4GB worked.
 % https://de.mathworks.com/matlabcentral/answers/255083-matlab-and-robotic-system-toolbox-java-lang-outofmemoryerror-gc-overhead-limit-exceeded#answer_318119
@@ -1321,8 +1322,7 @@ set_size_plot_subplot(fighdl, ...
   0,0) % x y
 drawnow();
 if usr_save_figures
-%   saveas(2500, fullfile(respath, 'condition_number_traj.fig'));
-%   saveas(2500, fullfile(respath, 'condition_number_traj.png'));
+  saveas(2500, fullfile(respath, 'nullspace_traj_condition.fig'));
   exportgraphics(fighdl, fullfile(paperfig_path, ['nullspace_traj_condition','.pdf']),'ContentType','vector')
 %   exportgraphics(gcf, fullfile(paperfig_path, ['nullspace_traj_condition','.png']),'Resolution','600')
 end
@@ -1331,7 +1331,7 @@ end
 %% Bild: Schnitte verschiedener Bahnkoordinaten s durch die Karte
 if debug_plot
   change_current_figure(2600);clf; hold all;
-  s_select = 5.2:0.05:5.5;
+  s_select = 4.6:0.1:5.2; % is used in the presentation
   for i = 1:length(s_select)
     [~,II_i] = min(abs(s_ref-s_select(i)));
   %   s_ref(II_i)
@@ -1349,7 +1349,9 @@ if debug_plot
     legtext{i} = sprintf('$s{=}%1.2f$', s_select(i));
   end
   legend(legtext, 'interpreter', 'latex');
-  
+  if usr_save_figures
+    saveas(2600, fullfile(respath, 'performance_map_slices.fig'));
+  end
   change_current_figure(2601);clf; hold all;
   phiz_select = sort([60,30,0,(-15:-5:-30)]*pi/180);
   for i = 1:length(phiz_select)

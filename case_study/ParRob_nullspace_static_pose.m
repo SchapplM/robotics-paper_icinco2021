@@ -214,7 +214,7 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
       if any(abs(q_jj - q_dummy) > 1e-8)
         error('IK-Ergebnis hat sich bei Test verändert');
       end
-      h_ges(jj,:) = Stats_dummy.h(Stats_dummy.iter+1,2:end);
+      h_ges(jj,:) = Stats_dummy.h(Stats_dummy.iter+1,2:5);
       q_ges(jj,:) = q_jj;
       q_jj_old = q_jj;
     end
@@ -329,7 +329,7 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
     if any(abs(qs - q_dummy) > 1e-8)
       error('IK-Ergebnis hat sich bei Test verändert');
     end
-    hs = Stats_dummy.h(Stats_dummy.iter,2:end)';
+    hs = Stats_dummy.h(Stats_dummy.iter,2:5)';
     % Füge Datenpunkt zu Gesamt-Rasterung hinzu
     x_test_ges = [x_test_ges; xs']; %#ok<AGROW>
     h_ges = [h_ges; hs']; %#ok<AGROW>
@@ -641,7 +641,7 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
       % Bilde Summe der Merkmale neu (eigentlich nur notwendig, wenn Ge-
       % wichtungen zwischen Trajektorie und Einzelpunkt unterschiedlich
       % sind aber hier trotzdem die Ergebnisse verglichen werden sollen.
-      h_ep_ii_sum = sum(Stats_ep.h(Stats_ep.iter,2:end)'.*s_ep_ii.wn);%wn_traj(I_wn_traj));
+      h_ep_ii_sum = sum(Stats_ep.h(Stats_ep.iter,2:1+length(s_ep_ii.wn))'.*s_ep_ii.wn);%wn_traj(I_wn_traj));
       % Ergebnis prüfen
       reserr_q = q_traj_ii - q_ep_ii;
       reserr_h_sum = h_traj_ii_sum - h_ep_ii_sum;

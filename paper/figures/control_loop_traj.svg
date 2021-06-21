@@ -14,7 +14,7 @@
    viewBox="0 0 80 22"
    version="1.1"
    id="svg8"
-   inkscape:version="0.92.3 (2405546, 2018-03-11)"
+   inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
    sodipodi:docname="control_loop_traj.svg">
   <defs
      id="defs2">
@@ -312,15 +312,15 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="5.6"
-     inkscape:cx="130.55159"
+     inkscape:cx="90.730161"
      inkscape:cy="63.555938"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
-     inkscape:window-width="1633"
-     inkscape:window-height="995"
-     inkscape:window-x="47"
-     inkscape:window-y="27"
+     inkscape:window-width="1920"
+     inkscape:window-height="986"
+     inkscape:window-x="-11"
+     inkscape:window-y="-11"
      inkscape:window-maximized="1" />
   <metadata
      id="metadata5">
@@ -758,5 +758,16 @@
        id="path1433-2-3-8-3-9"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cc" />
+    <text
+       xml:space="preserve"
+       style="font-style:normal;font-weight:normal;font-size:10.58333302px;line-height:125%;font-family:sans-serif;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.26458332px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+       x="23.042055"
+       y="287.26297"
+       id="text1410-2-0-2-9-6"><tspan
+         sodipodi:role="line"
+         id="tspan1408-70-6-6-7-5"
+         x="23.042055"
+         y="287.26297"
+         style="font-size:0.70555556px;stroke-width:0.26458332px">$-$</tspan></text>
   </g>
 </svg>

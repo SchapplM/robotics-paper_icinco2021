@@ -1,4 +1,4 @@
-%% Creator: Inkscape inkscape 0.92.3, www.inkscape.org
+%% Creator: Inkscape inkscape 0.92.4, www.inkscape.org
 %% PDF/EPS/PS + LaTeX output extension by Johan Engelen, 2010
 %% Accompanies image file 'control_loop_traj.pdf' (pdf, eps, ps)
 %%
@@ -82,5 +82,6 @@
     \put(0,0){\includegraphics[width=\unitlength,page=13]{control_loop_traj.pdf}}%
     \put(0.21445389,0.25414963){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\ddot{\bm{q}}$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=14]{control_loop_traj.pdf}}%
+    \put(0.28802569,0.12171288){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$-$\end{tabular}}}}%
   \end{picture}%
 \endgroup%
