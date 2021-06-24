@@ -506,7 +506,7 @@ for ii_sign = 0:1 % move redundant coordinate in positive and negative direction
           if any(abs(q_j_list(k,:)' - q_dummy) > 1e-8)
             error('IK-Ergebnis hat sich bei Test verändert');
           end
-          h_list(k,:) = Stats_dummy.h(Stats_dummy.iter+1,2:end);
+          h_list(k,:) = Stats_dummy.h(Stats_dummy.iter+1,2:5);
         end
         % select the joint angles that are nearest to the previous pose
         if ~(i==1 && j == 1) % not possible for first sample
