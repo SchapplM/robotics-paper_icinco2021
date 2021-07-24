@@ -1,4 +1,4 @@
-# Singularity-Avoidance of Task-Redundant Robots in Pointing Tasks: On Nullspace Projection and Cardan Angles as Orientation Coordinates
+# Singularity Avoidance of Task-Redundant Robots in Pointing Tasks: On Nullspace Projection and Cardan Angles as Orientation Coordinates
 
 Authors: Moritz Schappler, and Tobias Ortmaier
 
@@ -6,10 +6,11 @@ This code is supplemental material to the following submission to the [ICINCO Co
 
 ```bib
 @InProceedings{SchapplerOrt2021,
-  author    = {Schappler, Moritz and and Ortmaier, Tobias},
-  booktitle = {ICINCO},
-  title     = {Singularity-Avoidance of Task-Redundant Robots in Pointing Tasks: On Nullspace Projection and Cardan Angles as Orientation Coordinates},
+  author    = {Schappler, Moritz and Ortmaier, Tobias},
+  booktitle = {Proceedings of the 18th International Conference on Informatics in Control, Automation and Robotics (ICINCO 2021)},
+  title     = {Singularity Avoidance of Task-Redundant Robots in Pointing Tasks: On Nullspace Projection and Cardan Angles as Orientation Coordinates},
   year      = {2021},
+  doi       = {10.5220/0010621103380349},
 }
 ```
 <p align="middle">
