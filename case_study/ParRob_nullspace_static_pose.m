@@ -151,7 +151,7 @@ fprintf('Revolute (passive joint) acceleration limits: %1.1f deg/s^2\n', 180/pi*
 % Einstellungen für Dummy-Berechnung ohne Änderung der Gelenkwinkel.
 s_ep_dummy = s_ep;
 s_ep_dummy.retry_limit = 0;
-s_ep_dummy.wn = ones(4,1); % hierdurch werden die Kriterien berechnet
+s_ep_dummy.wn = ones(RP.idx_ik_length.wnpos,1); % hierdurch werden die Kriterien berechnet
 s_ep_dummy.K = zeros(RP.NJ,1); % hierdurch keine Bewegung und damit ...
 s_ep_dummy.Kn = zeros(RP.NJ,1); % ... sofortiger Abbruch
 s_ep_dummy.optimcrit_limits_hyp_deact = optimcrit_limits_hyp_deact; % Hyperbolische Funktion nur nahe an Grenzen
@@ -342,8 +342,9 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
     RP.update_EE_FG(I_EE_full,I_EE_red);
     s_ep_nolimits = s_ep;
     s_ep_nolimits.scale_lim = 0;
-    wn_traj = zeros(8,1);
-    s_ep_nolimits.wn = [0;0;0;1];
+    wn_traj = zeros(RP.idx_ik_length.wntraj,1);
+    s_ep_nolimits.wn = zeros(RP.idx_ik_length.wnpos,1); 
+    s_ep_nolimits.wn(RP.idx_ikpos_wn.jac_cond) = 1;
     [q_ep_nolimits, Phi,~,Stats_ep_nolimits] = RP.invkin4(x_l, qs, s_ep_nolimits);
     x_ep_nolimits = RP.fkineEE_traj(q_ep_nolimits')';
     assert(all(abs(Phi)<1e-9), 'IK does not converge in test');
@@ -446,37 +447,37 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
     end
     for ii = 1:n_cases_ii % Schleife über verschiedene Parametrierungen
       % Kriterien zusammenstellen
-      wn_traj = zeros(8,1);
+      wn_traj = zeros(RP.idx_ik_length.wntraj,1);
       % Dämpfung der Geschwindigkeit immer einbauen. Bei symmetrischen
       % Grenzen entspricht das dem Standard-Dämpfungsterm aus der Literatur
-      wn_traj(3) = 0.5; % K_v
+      wn_traj(RP.idx_iktraj_wnP.qDlim_par) = 0.5; % K_v
       % Zusätzlich Dämpfung bei Überschreitung des Grenzbereichs zu den
       % Positions-Grenzen. Dadurch weniger Überschreitungen der Grenze.
-      wn_traj(2) = 1; % K_P (hyperb. limit)
+      wn_traj(RP.idx_iktraj_wnP.qlim_hyp) = 1; % K_P (hyperb. limit)
       if l == 1 % normale Pose
         switch ii
           case 1
-            wn_traj(3) = 0; % K_v
-            wn_traj(6) = 1; % K_P (cond)
-            wn_traj(10) = 0; % K_D (cond)
+            wn_traj(RP.idx_iktraj_wnP.qDlim_par) = 0; % K_v
+            wn_traj(RP.idx_iktraj_wnP.jac_cond) = 1; % K_P (cond)
+            wn_traj(RP.idx_iktraj_wnD.jac_cond) = 0; % K_D (cond)
           case 2
-            wn_traj(3) = 0.8; % K_v
-            wn_traj(6) = 1; % K_P (cond)
-            wn_traj(8) = 0.5; % K_D (limit)
-            wn_traj(10) = 0.5; % K_D (cond)
+            wn_traj(RP.idx_iktraj_wnP.qDlim_par) = 0.8; % K_v
+            wn_traj(RP.idx_iktraj_wnP.jac_cond) = 1; % K_P (cond)
+            wn_traj(RP.idx_iktraj_wnD.qlim_hyp) = 0.5; % K_D (limit)
+            wn_traj(RP.idx_iktraj_wnD.jac_cond) = 0.5; % K_D (cond)
         end
       else % singuläre Pose
         switch ii
           case 1 % manuell getuned
-            wn_traj(3) = 0.03; % K_v
-            wn_traj(6) = 0.05; % K_P (cond)
-            wn_traj(10) = 0.01; % K_D (cond)
+            wn_traj(RP.idx_iktraj_wnP.qDlim_par) = 0.03; % K_v
+            wn_traj(RP.idx_iktraj_wnP.jac_cond) = 0.05; % K_P (cond)
+            wn_traj(RP.idx_iktraj_wnD.jac_cond) = 0.01; % K_D (cond)
           case 2 % aus PSO
             wn_traj(2) = 0; % K_P (limit)
-            wn_traj(3) = 0.2; % K_v
-            wn_traj(6) = 0.5; % K_P (cond)
-            wn_traj(8) = 0.6; % K_D (limit)
-            wn_traj(10) = 0.03; % K_D (cond)
+            wn_traj(RP.idx_iktraj_wnP.qDlim_par) = 0.2; % K_v
+            wn_traj(RP.idx_iktraj_wnP.jac_cond) = 0.5; % K_P (cond)
+            wn_traj(RP.idx_iktraj_wnD.qlim_hyp) = 0.6; % K_D (limit)
+            wn_traj(RP.idx_iktraj_wnD.jac_cond) = 0.03; % K_D (cond)
           otherwise
             warning('Fall nicht definiert');
             continue
@@ -495,7 +496,8 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
       % Grenzen dürfen auch in Zwischenschritten nicht überschritten
       % werden.
       s_ep_ii.scale_lim = 0.9;
-      s_ep_ii.wn = wn_traj(I_wn_traj);
+      s_ep_ii.wn = ones(RP.idx_ik_length.wnpos,1);
+      s_ep_ii.wn(1:4) = wn_traj(I_wn_traj); % TODO: Indizes nicht hart-kodiert aufstellen
       s_ep_ii.wn(s_ep_ii.wn~=0) = 1; % Immer auf 1 setzen. Nur eine Zielfunktion betrachtet. Ist für Summe egal.
       s_ep_ii.optimcrit_limits_hyp_deact = optimcrit_limits_hyp_deact; % Hyperbolische Funktion nur nahe an Grenzen
       t_ep = NaN(51,1);
@@ -635,7 +637,7 @@ for k = 1:size(XL,1) % Schleife über alle Eckpunkte
       % Schließe geschwindigkeitsbezogene Merkmale aus Vergleich aus.
       % Dadurch ist der Vergleich von Positions- und Traj.-IK möglich.
       h_traj_ii = Stats_traj.h(I_finish,:);
-      h_traj_ii_sum = sum(Stats_traj.h(I_finish,1+I_wn_traj)*s_ep_ii.wn);
+      h_traj_ii_sum = sum(Stats_traj.h(I_finish,1+I_wn_traj)*s_ep_ii.wn(1:4)); % TODO: Keine hart kodierten Indizes
       % Leistungsmerkmale der Positions-IK am Ende
       h_ep_ii = Stats_ep.h(Stats_ep.iter+1,:);
       % Bilde Summe der Merkmale neu (eigentlich nur notwendig, wenn Ge-

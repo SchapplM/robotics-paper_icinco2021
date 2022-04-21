@@ -24,10 +24,9 @@ end
 use_mex_functions = true; % use mex functions (much faster)
 usr_recreate_mex = false; % recreate and recompile mex functions from templates
 usr_short_traj = false; % Trajektorie stark abkürzen, um prinzipielle Funktionalität zu zeigen
-usr_discretization_type = 'position-level'; % alternative 'trajectory'
 usr_create_anim = false; % create an animation video of the robot motion
 usr_anim_realtime = false; % save real-time animation (video as long as trajectory in seconds)
-usr_highres_distrfig = true; % high resolution of the paper figure for performance criterion map
+usr_highres_distrfig = false; % high resolution of the paper figure for performance criterion map
 debug_plot = false;% Create debug plots
 usr_save_figures = true; % save figures to disk
 usr_load_discretization = true; % load a previously computed performance map (if trajectory stays the same)
@@ -69,6 +68,9 @@ if usr_recreate_mex
   matlabfcn2mex({[RP.mdlname(1:end-6), '_invkin']});
   matlabfcn2mex({[RP.mdlname(1:end-6), '_invkin3']});
   matlabfcn2mex({[RP.mdlname(1:end-6), '_invkin_traj']});
+else
+  serroblib_update_template_functions({RP.Leg(1).mdlname});
+  parroblib_update_template_functions({RP.mdlname(1:end-2)});
 end
 RP.fill_fcn_handles(use_mex_functions,true);
 % Definition der Freiheitsgrade (vollständig und reduziert)
@@ -199,7 +201,8 @@ end
 % Berechne IK zu den einzelnen Eckpunkten. Wenn das nicht geht, bringt die
 % Trajektorie sowieso nichts. Benutze die IK mit Aufgabenredundanz 
 s_ep = s; % Einstellungen für die Eckpunkte-IK
-s_ep.wn = [1;0;0]; % Nehme Zielfunktion 1. Damit Überschreitung der Ränder in Zwischenständen möglich
+s_ep.wn = zeros(RP.idx_ik_length.wnpos,1); 
+s_ep.wn(RP.idx_ikpos_wn.qlim_par) = 1; % Nehme Zielfunktion 1. Damit Überschreitung der Ränder in Zwischenständen möglich
 s_ep.n_max = 5000; % Mehr Versuche (Abstände zwischen Punkten größer als bei Traj.-IK)
 % s_ep.maxrelstep_ns = 0.05; % Große Werte, Größere Nullraumbewegung pro Zeitschritt
 s_ep.retry_on_limitviol = true;
@@ -225,8 +228,8 @@ for i = 1:size(XL,1)
   [~,Phi_i_voll] = RP.constr1(q_i, x_i(:));
   assert(all(abs(Phi_i_voll)<1e-8), ...
     sprintf('Ergebnis der %s-IK (Parallel) ist falsch', I_EE_red_str));
-  % Berechne die IK mit Seriell-Methode (zum Testen).
-  [q_i_test, Phi_i_test] = RP.invkin_ser(XL(i,:)', qs, s_ep); % rmfield(s_ep,{'maxstep_ns','maxrelstep_ns'}));
+  % Berechnung mit aus Vorlagendatei generierter Funktion
+  [q_i_test, Phi_i_test] = RP.invkin4(XL(i,:)', qs, s_ep);
   assert(all(size(Phi_i_test)==[RP.NLEG*sum(I_EE_full)-1 1]), ...
     'ZB Phi_i aus ParRob/invkin_ser hat die falsche Dimension');
   % Prüfe auch hiervon die Richtigkeit
@@ -273,78 +276,46 @@ for i = 1:size(XL,1)
 end
 %% Global Discretization of the Redundant Coordinate
 % Create equidistant trajectory samples. Very fine sampling
-[X_tref,~,~,~,IL_ref] = traj_trapez2_multipoint(XL, 3, 0.01, 0.01, 1e-4, 0);
-% Get normalized path coordinate
-s_ref = NaN(size(X_tref,1),1);
-% Get progress related to key points of the trajectory
-IL_ref = [IL_ref; size(X_tref,1)];
-for i = 1:size(XL,1)-1
-  I1 = IL_ref(i);
-  I2 = IL_ref(i+1);
-  p_all = ( X_tref(I1:I2,:)-repmat(XL(i,:),I2-I1+1,1) ) ./ ...
-           repmat(XL(i+1,:)-XL(i,:),I2-I1+1,1);
-  p = mean(p_all,2, 'omitnan');
-  s_ref(I1:I2) = (i-1)+p;
-end
-% Remove detailed data and limit to resolution 1mm/1deg
-last_x = inf(1,6);
-last_s = inf;
+[X_tref,~,~,~,ILref] = traj_trapez2_multipoint(XL, 3, 0.01, 0.01, 1e-4, 0);
+% Einstellungen vorbereiten
+RP.update_EE_FG(I_EE_full,I_EE_full);
+[q0_perfmap, Phi0] = RP.invkin4(XL(1,:)', QL(1,:)');
+assert(all(abs(Phi0)<1e-6), 'IK for performance map init. is wrong');
+settings_perfmap = struct('settings_ik', s, 'q0', q0_perfmap, ...
+  'I_EE_red', I_EE_red, 'map_phistart', XL(1,6), ...
+  'maplim_phi', [-pi,pi]);
 
 if usr_highres_distrfig % settings for high resulution of performance map
   % three values for horizontal resolution of the performance map
-  mapres_thresh_eepos = 1e-3; % 1mm
-  mapres_thresh_eerot = 3*pi/180; % 1deg
-  mapres_thresh_pathcoordres = 0.01; % min 100 values between two trajectory key points
+  settings_perfmap.mapres_thresh_eepos = 1e-3; % 1mm
+  settings_perfmap.mapres_thresh_eerot = 3*pi/180; % 1deg
+  settings_perfmap.mapres_thresh_pathcoordres = 0.01; % min 100 values between two trajectory key points
   % vertical resolution of the performance map. Resolution for the
   % redundant coordinate phi_z
-  mapres_redcoord_dist_deg = 0.5; % deg
+  settings_perfmap.mapres_redcoord_dist_deg = 0.5; % deg
+  highresstr = 'highres';
 else % settings for low resulution of map
-  mapres_thresh_eepos = 3e-3; % 3mm
-  mapres_thresh_eerot = 3*pi/180; % 3deg
-  mapres_thresh_pathcoordres = 0.05;% min 20 values between key points
-  mapres_redcoord_dist_deg = 5; % deg
+  settings_perfmap.mapres_thresh_eepos = 3e-3; % 3mm
+  settings_perfmap.mapres_thresh_eerot = 3*pi/180; % 3deg
+  settings_perfmap.mapres_thresh_pathcoordres = 0.05;% min 20 values between key points
+  settings_perfmap.mapres_redcoord_dist_deg = 5; % deg
+  highresstr = 'lowres';
 end
-for i = 1:size(X_tref,1)
-  if norm(X_tref(i,1:3)-last_x(1:3)) < mapres_thresh_eepos && ...
-     norm(X_tref(i,4:6)-last_x(4:6)) < mapres_thresh_eerot && ...
-     abs(s_ref(i)-last_s) < mapres_thresh_pathcoordres
-    X_tref(i,:) = NaN; % diesen Punkt löschen
-  else
-    last_x = X_tref(i,:);
-    last_s = s_ref(i);
-  end
-end
-I_remove = isnan(X_tref);
-X_tref = X_tref(any(~I_remove,2),:);
-s_ref = s_ref(any(~I_remove,2));
-% Debug: For fast check of validity
-% X_tref = X_tref(1:5:30,:); % Debug
-% s_ref = s_ref(1:5:30,:); % Debug
-% Create range of values for the redundant coordinate. Only consider one
-% sign here and consider negative signs below
-phiz_range_calc = (0:mapres_redcoord_dist_deg:180)*pi/180;
-phiz_range = NaN(1,2*length(phiz_range_calc)-1); % for both signs
-filename_pre = sprintf('pkm_traj_%dtraj_%dphiz_discretization_%s', ...
-  size(X_tref,1), length(phiz_range_calc), usr_discretization_type);
-filename_discr = fullfile(respath, [filename_pre, '_data.mat']);
+filename_pre = sprintf('pkm_traj0_%dsamples', size(X_tref,1));
+filename_perfmap = fullfile(respath, [filename_pre, '_perfmap_', highresstr, '.mat']);
 data_loaded_offline = false;
-if usr_load_discretization && ~exist(filename_discr, 'file')
-  warning('Unable to load discretization results from %s', filename_discr);
-elseif usr_load_discretization && exist(filename_discr, 'file')
-  d = load(filename_discr);
+if usr_load_discretization && ~exist(filename_perfmap, 'file')
+  warning('Unable to load discretization results from %s', filename_perfmap);
+elseif usr_load_discretization && exist(filename_perfmap, 'file')
+  d = load(filename_perfmap);
   if all(size(XL)==size(d.XL))
     test_XL = XL - d.XL;
   else
     test_XL = 1; % raises error
   end
-  if all(size(phiz_range)==size(d.phiz_range))
-    test_phiz = phiz_range - d.phiz_range;
-  else
-    test_phiz = 1;
-  end
-  if any(abs(test_XL(:)) > 1e-8) || any(abs(test_phiz(:)) > 1e-8)
+  if any(abs(test_XL(:)) > 1e-5)
     warning('Data from file does not match the settings');
-  elseif length(intersect(fields(d), {'H_all', 'XL', 'phiz_range', 'Q_all'}))~=4
+  elseif length(intersect(fields(d), {'H_all', 'XL', 'phiz_range', 'Q_all', 's_ref'}))~=5
     warning('Data from file misses fields');
   else
     data_loaded_offline = true;
@@ -352,213 +323,23 @@ elseif usr_load_discretization && exist(filename_discr, 'file')
     H_all = d.H_all;
     Q_all = d.Q_all;
     phiz_range = d.phiz_range;
+    s_ref = d.s_ref;
   end
 end
-fprintf(['The performance map contains %d trajectory samples and %d ', ...
-  'values for the redundant coordinates. %d evaluations in total\n'], ...
-  size(X_tref,1), 2*length(phiz_range_calc), size(X_tref,1)*2*length(phiz_range_calc));
-
 if ~data_loaded_offline
-fprintf('Start discretization of the inverse kinematics\n');
-H_all = NaN(size(X_tref,1), 2*length(phiz_range_calc)-1, 4);
-Q_all = NaN(2*length(phiz_range_calc)-1, RP.NJ, size(X_tref,1));
-% Einstellungen für Dummy-Berechnung ohne Änderung der Gelenkwinkel.
-s_ep_dummy = s_ep;
-s_ep_dummy.retry_limit = 0;
-s_ep_dummy.wn = ones(4,1); % hierdurch werden die Kriterien berechnet
-s_ep_dummy.K = zeros(RP.NJ,1); % hierdurch keine Bewegung und damit ...
-s_ep_dummy.Kn = zeros(RP.NJ,1); % ... sofortiger Abbruch
-s_ep_dummy.optimcrit_limits_hyp_deact = optimcrit_limits_hyp_deact;
-% Einstellung für IK bei globaler Diskretisierung über Trajektorie
-s_ep_glbdscr = s_ep; % leave as is (temporarily permit limit violations; no scaling until limit)
-s_ep_glbdscr.retry_limit = 10;
-s_ep_glbdscr.normalize = false; % no normalization (due to joint limits)
-s_ep_glbdscr = rmfield(s_ep_glbdscr, 'finish_in_limits'); % does not work without redundancy
-s_traj_glbdscr = struct('simplify_acc', true);
-
-for ii_sign = 0:1 % move redundant coordinate in positive and negative direction
-  fprintf('Start computation for sign %+d\n', (-1)^ii_sign);
-  H_all_ii = NaN(size(X_tref,1), length(phiz_range_calc), 4);
-  Q_all_ii = NaN(length(phiz_range_calc), RP.NJ, size(X_tref,1));
-  t_lastmessage = tic();
-  t1 = tic();
-  phiz_range_ii = (-1)^ii_sign * phiz_range_calc;
-  for i = 1:size(X_tref,1) % loop trajectory samples
-    t1_i = tic();
-    % Get joint configurations using a virtual trajectory
-    if i > 1
-      q0_j = Q_all_ii(1, :, i-1)';
-    else
-      q0_j = q0;
-    end
-    if strcmp(usr_discretization_type, 'trajectory')
-      RP.update_EE_FG(I_EE_full,I_EE_full); % Roboter auf 3T3R einstellen
-      X_i_traj = [repmat(X_tref(i,1:5), length(phiz_range_ii), 1), phiz_range_ii'];
-      XD_i_traj = [zeros(length(phiz_range_ii), 5), [0;diff(phiz_range_ii(:))]];
-      XDD_i_traj = zeros(length(phiz_range_ii), 6);
-      T_i_traj = (0:1:length(phiz_range_ii)-1)';
-      [Q_i,~,~,~,~,~,~,Stats] = RP.invkin2_traj(X_i_traj, XD_i_traj, XDD_i_traj, T_i_traj, q0_j, s_traj_glbdscr); 
-      RP.update_EE_FG(I_EE_full,I_EE_red); % Roboter auf 3T2R einstellen
-      for j = 1:length(phiz_range_ii)
-        x_j = [X_tref(i,1:5), phiz_range_ii(j)]';
-        q_j = Q_i(j,:)';
-        % IK benutzen, um Zielfunktionswerte zu bestimmen (ohne Neuberechnung)
-        [q_dummy, Phi,~,Stats_dummy] = RP.invkin4(x_j, q_j, s_ep_dummy);
-        if any(abs(q_j - q_dummy) > 1e-8)
-          error('IK-Ergebnis hat sich bei Test verändert');
-        end
-        Q_all_ii(j, :, i) = q_j;
-        H_all_ii(i,j,:) = Stats_dummy.h(Stats_dummy.iter+1,2:end);
-      end
-    elseif strcmp(usr_discretization_type, 'position-level')
-    % Get joint configurations using position-level IK (less efficient)
-    % Here enforcing the joint limits is easier, but not necessary to
-    % determine the condition numbers
-      for j = 1:length(phiz_range_ii)
-        if j == 1
-          % assure joint limits by retrying, only they match
-          s_ep_glbdscr.retry_on_limitviol = true;
-        else
-          % Not able to retry on position limits violation. Otherwise,
-          % platform angles greater than 180° can not be checked. For this
-          % the initial value has to be the next point
-          s_ep_glbdscr.retry_on_limitviol = false;
-        end
-        RP.update_EE_FG(I_EE_full,I_EE_full); % Roboter auf 3T3R einstellen
-        % IK benutzen, um Zielfunktionswerte zu bestimmen (ohne Neuberechnung)
-        t1_j = tic();
-        x_j = [X_tref(i,1:5), phiz_range_ii(j)]';
-        if j > 1
-          delta_x = [zeros(5,1);phiz_range_ii(j)-phiz_range_ii(j-1)];
-          [~,Phi_q] = RP.constr4grad_q(Q_all_ii(j-1, :, i)');
-          [~,Phi_x] = RP.constr4grad_x([X_tref(i,1:5),phiz_range_ii(j-1)]');
-          Jtilde_inv_x = -Phi_q\Phi_x; % Full coordinate Jacobian (equ. 17 in paper)
-          q0_j = Q_all_ii(j-1, :, i)' + Jtilde_inv_x*delta_x;
-        else
-          if i > 1
-            q0_j = []; % will be selected below
-          else
-            q0_j = q0;
-          end
-        end
-        if any(isnan(q0_j))
-          % The previous pose was not computed successfully. Take the
-          % second last and so on
-          q0_j = q0; % overwrite this later
-          for jjj = j-1:-1:1 % look back until the first platform rotation
-            if ~any(isnan(Q_all_ii(jjj, :, i)))
-              q0_j = Q_all_ii(jjj, :, i)';
-              break;
-            end
-          end
-        end
-        % create list of initial values for the IK and compute IK
-        q0_list = q0_j';
-        if j > 1 && ~any(isnan(Q_all_ii(j-1, :, i)))
-          q0_list = [q0_list; Q_all_ii(j-1, :, i)];  %#ok<AGROW>
-        end
-        if i > 1 && j > 1 && ~any(isnan(Q_all_ii(j-1, :, i-1)))
-          q0_list = [q0_list; Q_all_ii(j-1, :, i-1)];  %#ok<AGROW>
-        end
-        if i > 1 && ~any(isnan(Q_all_ii(j, :, i-1)))
-          q0_list = [q0_list; Q_all_ii(j, :, i-1)];  %#ok<AGROW>
-        end
-        if i == 1 && j == 1
-          % Add random poses to be able to start with the best pose
-          q0_list = [q0_list; repmat(qlim(:,1)',200,1)+rand(200, RP.NJ).* ...
-            repmat(qlim(:,2)' - qlim(:,1)',200,1)];  %#ok<AGROW>
-        end
-        % In case of second run overwrite everything and directly take
-        % results for phi=0. Otherwise their may be a discontinuity
-        if ii_sign == 1 && j == 1 % first value corresponds to 0
-          q0_list = Q_all(length(phiz_range_ii),:,i);
-        end
-        if any(isnan(q0_list(:))), error('An Initial value is NaN'); end % this makes a random new initial seed, which is not desired here
-        q_j_list = NaN(size(q0_list));
-        for k = 1:size(q0_list,1)
-          [q_k, Phi, ~, Stats] = RP.invkin2(x_j, q0_list(k,:)', s_ep_glbdscr);
-          if any(abs(Phi) > 1e-8)
-            % Try other IK method
-            [q_k, Phi, ~, Stats] = RP.invkin4(x_j, q0_list(k,:)', s_ep_glbdscr);
-            % Mark this as not working, if other method fails as well
-            if any(abs(Phi) > 1e-8)
-              q_j_list(k,:) = NaN;
-              continue
-            end
-          end
-          % normalize joint angles (to stay near the limits' center)
-          % Do not do this to see what happens after a full rotation
-          % q_k(RP.MDH.sigma==0) = normalizeAngle(q_k(RP.MDH.sigma==0), ...
-          %   mean(qlim(RP.MDH.sigma==0,:),2)); % normalize to center of limits
-          q_j_list(k,:) = q_k;
-        end
-        if all(isnan(q_j_list(:)))
-          warning('IK did not find a solution for phi_z=%1.1fdeg', 180/pi*x_j(6));
-          continue % this IK configuration did not work.
-        end
-        % Compute performance criteria
-        RP.update_EE_FG(I_EE_full,I_EE_red); % Roboter auf 3T2R einstellen
-        h_list = NaN(size(q_j_list,1),4);
-        q_dist = NaN(size(q_j_list,1),4);
-        for k = 1:size(q_j_list,1)
-          % IK benutzen, um Zielfunktionswerte zu bestimmen (ohne Neuberechnung)
-          [q_dummy, Phi,~,Stats_dummy] = RP.invkin4(x_j, q_j_list(k,:)', s_ep_dummy);
-          if any(abs(q_j_list(k,:)' - q_dummy) > 1e-8)
-            error('IK-Ergebnis hat sich bei Test verändert');
-          end
-          h_list(k,:) = Stats_dummy.h(Stats_dummy.iter+1,2:5);
-        end
-        % select the joint angles that are nearest to the previous pose
-        if ~(i==1 && j == 1) % not possible for first sample
-          [~,Ibest_k] = min(sum((q_j_list-repmat(q0_list(1,:),size(q_j_list,1),1)).^2,2));
-        else
-          % Alternative: Pick the best joint configuration (away from limits)
-          % This may require reconfigurations within the plane phiz-s.
-          % Therefore only use for the first sample.
-          [~, Ibest_k] = min(h_list(:,2)+h_list(:,1)); % squared and hyperbolic limit. Use best
-        end
-        if any(isnan(q_j_list(Ibest_k,:))), error('Unexpected NaN'); end
-        Q_all_ii(j, :, i) = q_j_list(Ibest_k,:);
-        H_all_ii(i,j,:) = h_list(Ibest_k,:);
-      end
-    else
-      error('Mode not defined');
-    end
-    if toc(t_lastmessage)-toc(t1_i) > 20 || i == 1
-      fprintf(['Duration for trajectory sample number %d/%d: %1.1fs. Remaining %d ', ...
-        'samples (estimated %1.1fmin)\n'], i, size(X_tref,1), toc(t1_i), ...
-        (size(X_tref,1)-i), toc(t1_i)*(size(X_tref,1)-i)/60);
-      t_lastmessage = tic();
-    end
-  end
-  % Save data for the sign value ii
-  if ii_sign == 0 % positive sign
-    % take all the result data
-    I_phi = 1:length(phiz_range_ii);
-    % store in second half of result variables
-    I_all = length(phiz_range_ii):(2*length(phiz_range_ii)-1);
-  else
-    % Beginning of the interval. The computation starts with 0, but the
-    % lowest value has to be saved as the first one. Therefore `flipör`.
-    % Remove the 0 entry because it is already included in the positive
-    % values.
-    I_phi = fliplr(2:length(phiz_range_ii));
-    I_all = 1:length(phiz_range_ii)-1;
-  end
-  phiz_range(I_all) = phiz_range_ii(I_phi);
-  for k = 1:size(Q_all_ii,3)
-    Q_all(I_all,:,k) = Q_all_ii(I_phi,:,k);
-  end
-  for k = 1:size(H_all_ii,3)
-    H_all(:,I_all,k) = H_all_ii(:,I_phi,k);
-  end
-end
-fprintf('Finished discretization of the trajectory. Total %1.1fmin)\n', toc(t1)/60);
-save(filename_discr, 'H_all', 'Q_all', 'phiz_range', 'XL');
+  fprintf('Start discretization of the inverse kinematics\n');
+  [H_all, Q_all, s_ref, s_tref, phiz_range] = RP.perfmap_taskred_ik( ...
+    X_tref, ILref, settings_perfmap);
+  fprintf('Finished discretization of the trajectory. Total %1.1fmin.\n', toc(t1)/60);
+  save(filename_perfmap, 'H_all', 'Q_all', 'phiz_range', 'XL', 's_ref');
 end
 if length(unique(phiz_range))~=length(phiz_range)
   error('Something went wrong when assembling phiz_range');
 end
+fprintf(['The performance map contains %d trajectory samples and %d ', ...
+  'values for the redundant coordinates. %d evaluations in total\n'], ...
+  size(X_tref,1), length(phiz_range), size(X_tref,1)*length(phiz_range));
+
 %% Plot global distribution
 if debug_plot % Distribution of PKM Jacobian condition number
   change_current_figure(3);clf; set(3, 'Name', 'Distr_PKMJacCrit', 'NumberTitle', 'off');
@@ -730,7 +511,7 @@ q_test = Q_all(i_phi,:,i_traj)';
 x_test = [X_tref(i_traj,1:5), phiz_range(i_phi)]';
 % Test the loaded configuration
 [~,Phi_test] = RP.constr1(q_test, x_test);
-assert(all(abs(Phi_test)<1e-10), 'Kinematic constraints in loaded config. do not match');
+assert(all(abs(Phi_test)<1e-6), 'Kinematic constraints in loaded config. do not match');
 change_current_figure(900);clf;
 set(900,'Name','Rob','NumberTitle','off');
 % title(sprintf('Robot in Selected Pose: traj idx %d, phiz=%1.0fdeg', ...
@@ -939,12 +720,13 @@ end
 for kk = 1:length(Namen_Methoden)*(~usr_load_traj)
   set_kk = s_Traj;
   set_kk.debug = true; % check for errors in trajectory IK function
-  wn_traj_default = zeros(10,1);
-  wn_traj_default(2) = 1; % K_P (hyperb. limit)
-  wn_traj_default(3) = 0.03; % K_v
-  wn_traj_default(6) = 0.05; % K_P (cond)
-  wn_traj_default(8) = 0.6; % K_D (limit)
-  wn_traj_default(10) = 0.01; % K_D (cond)
+  wn_traj_default = zeros(RP.idx_ik_length.wntraj,1);
+  
+  wn_traj_default(RP.idx_iktraj_wnP.qlim_hyp) = 1; % K_P (hyperb. limit)
+  wn_traj_default(RP.idx_iktraj_wnP.qDlim_par) = 0.03; % K_v
+  wn_traj_default(RP.idx_iktraj_wnP.jac_cond) = 0.05; % K_P (cond)
+  wn_traj_default(RP.idx_iktraj_wnD.qlim_hyp) = 0.6; % K_D (limit)
+  wn_traj_default(RP.idx_iktraj_wnD.jac_cond) = 0.01; % K_D (cond)
   set_kk.thresh_ns_qa = 1; % always use full joint projector
   for j = 1:RP.NLEG
     RP.Leg(j).qlim = qlim_backup(RP.I1J_LEG(j):RP.I2J_LEG(j),:);
@@ -979,9 +761,9 @@ for kk = 1:length(Namen_Methoden)*(~usr_load_traj)
       phiz_0 = 45*pi/180;
       % Select lower gains to avoid overshoot
       wn_traj = wn_traj_default;
-      wn_traj(3) = 0.1; % K_v
-      wn_traj(6) = wn_traj(6)/5; % K_P (cond)
-      wn_traj(10) = wn_traj(10)/5; % K_D (cond)
+      wn_traj(RP.idx_iktraj_wnP.qDlim_par) = 0.1; % K_v
+      wn_traj(RP.idx_iktraj_wnP.jac_cond) = wn_traj(RP.idx_iktraj_wnP.jac_cond)/5; % K_P (cond)
+      wn_traj(RP.idx_iktraj_wnD.jac_cond) = wn_traj(RP.idx_iktraj_wnD.jac_cond)/5; % K_D (cond)
     case 4
       name_method='phi90';
       name_method_leg = '$\varphi_{z,0} = 90^\circ$';
@@ -989,9 +771,9 @@ for kk = 1:length(Namen_Methoden)*(~usr_load_traj)
       phiz_0 = 90*pi/180;
       % Select lower gains to avoid overshoot
       wn_traj = wn_traj_default;
-      wn_traj(3) = 0.25; % K_v
-      wn_traj(6) = wn_traj(6)/10; % K_P (cond)
-      wn_traj(10) = wn_traj(10)/10; % K_D (cond)
+      wn_traj(RP.idx_iktraj_wnP.qDlim_par) = 0.25; % K_v
+      wn_traj(RP.idx_iktraj_wnP.jac_cond) = wn_traj(RP.idx_iktraj_wnP.jac_cond)/10; % K_P (cond)
+      wn_traj(RP.idx_iktraj_wnD.jac_cond) = wn_traj(RP.idx_iktraj_wnD.jac_cond)/10; % K_D (cond)
     case 5
       name_method='phi45_lowgain';
       name_method_leg = '$\varphi_{z,0} = 45^\circ$ (low gains)';
@@ -999,9 +781,9 @@ for kk = 1:length(Namen_Methoden)*(~usr_load_traj)
       phiz_0 = 45*pi/180;
       % Select lower gains to avoid overshoot
       wn_traj = wn_traj_default;
-      wn_traj(3) = 0.5; % K_v
-      wn_traj(6) = wn_traj(6)/20; % K_P (cond)
-      wn_traj(10) = wn_traj(10)/20; % K_D (cond)
+      wn_traj(RP.idx_iktraj_wnP.qDlim_par) = 0.5; % K_v
+      wn_traj(RP.idx_iktraj_wnP.jac_cond) = wn_traj(RP.idx_iktraj_wnP.jac_cond)/20; % K_P (cond)
+      wn_traj(RP.idx_iktraj_wnD.jac_cond) = wn_traj(RP.idx_iktraj_wnD.jac_cond)/20; % K_D (cond)
 %     case 3
 %       name_method='noposlimit';
 %       I_EE_Task_kk = I_EE_red;
