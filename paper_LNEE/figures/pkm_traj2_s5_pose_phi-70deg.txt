@@ -1,0 +1,5 @@
+Trajectory 2:
+Robot at s=4.7, phiz=-70.2 deg:
+cond(J) = 181.3
+h_coll_hyp = Inf
+d_coll = 13.9mm

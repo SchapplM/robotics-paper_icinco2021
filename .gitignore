@@ -25,6 +25,7 @@
 *.toc
 *.soc
 *.idx
+*.tdo
 *.pdfsync
 *~
 Thumbs.db
@@ -32,6 +33,7 @@ Thumbs.db
 *.asv
 *.fig
 *.png
+*.pdf
 *.mp4
 *.mat
 *.orig

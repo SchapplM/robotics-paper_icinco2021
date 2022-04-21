@@ -1,0 +1,6 @@
+Trajectory 2:
+Robot at s=1.1, phiz=36.3 deg:
+cond(J) = 113247.5
+h_coll_hyp = 0.0
+d_coll = NaNmm
+

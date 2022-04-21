@@ -1,0 +1,89 @@
+%% Creator: Inkscape inkscape 0.92.3, www.inkscape.org
+%% PDF/EPS/PS + LaTeX output extension by Johan Engelen, 2010
+%% Accompanies image file 'teaser_image.pdf' (pdf, eps, ps)
+%%
+%% To include the image in your LaTeX document, write
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics{<filename>.pdf}
+%% To scale the image, write
+%%   \def\svgwidth{<desired width>}
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics[width=<desired width>]{<filename>.pdf}
+%%
+%% Images with a different path to the parent latex file can
+%% be accessed with the `import' package (which may need to be
+%% installed) using
+%%   \usepackage{import}
+%% in the preamble, and then including the image with
+%%   \import{<path to file>}{<filename>.pdf_tex}
+%% Alternatively, one can specify
+%%   \graphicspath{{<path to file>/}}
+%% 
+%% For more information, please see info/svg-inkscape on CTAN:
+%%   http://tug.ctan.org/tex-archive/info/svg-inkscape
+%%
+\begingroup%
+  \makeatletter%
+  \providecommand\color[2][]{%
+    \errmessage{(Inkscape) Color is used for the text in Inkscape, but the package 'color.sty' is not loaded}%
+    \renewcommand\color[2][]{}%
+  }%
+  \providecommand\transparent[1]{%
+    \errmessage{(Inkscape) Transparency is used (non-zero) for the text in Inkscape, but the package 'transparent.sty' is not loaded}%
+    \renewcommand\transparent[1]{}%
+  }%
+  \providecommand\rotatebox[2]{#2}%
+  \newcommand*\fsize{\dimexpr\f@size pt\relax}%
+  \newcommand*\lineheight[1]{\fontsize{\fsize}{#1\fsize}\selectfont}%
+  \ifx\svgwidth\undefined%
+    \setlength{\unitlength}{342.99212598bp}%
+    \ifx\svgscale\undefined%
+      \relax%
+    \else%
+      \setlength{\unitlength}{\unitlength * \real{\svgscale}}%
+    \fi%
+  \else%
+    \setlength{\unitlength}{\svgwidth}%
+  \fi%
+  \global\let\svgwidth\undefined%
+  \global\let\svgscale\undefined%
+  \makeatother%
+  \begin{picture}(1,0.38842975)%
+    \lineheight{1}%
+    \setlength\tabcolsep{0pt}%
+    \put(0,0){\includegraphics[width=\unitlength,page=1]{teaser_image.pdf}}%
+    \put(0.03260084,0.00608889){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}norm. trajectory progress $s$\end{tabular}}}}%
+    \put(0.01998553,0.03765188){\color[rgb]{0,0,0}\rotatebox{90}{\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}redundant coordinate ($\varphi_z$)\end{tabular}}}}}%
+    \put(0.06760939,0.34923673){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{(a)} performance map\end{tabular}}}}%
+    \put(0.63749928,0.34923673){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{(b)} hexapod parallel robot\end{tabular}}}}%
+    \put(0.88891684,0.0190465){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}trajectory\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=2]{teaser_image.pdf}}%
+    \put(0.89332694,-0.00480009){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$s$=0...7\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=3]{teaser_image.pdf}}%
+    \put(0.78787017,0.08151699){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\varphi_z$\end{tabular}}}}%
+    \put(0.59011942,0.13159558){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}prismatic\end{tabular}}}}%
+    \put(0.62552611,0.10507807){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}joint\end{tabular}}}}%
+    \put(0.79054803,0.259295){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}universal\end{tabular}}}}%
+    \put(0.82264148,0.23388193){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}joint\end{tabular}}}}%
+    \put(0.90153812,0.09466578){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}spherical\end{tabular}}}}%
+    \put(0.93694482,0.06814827){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}joint\end{tabular}}}}%
+    \put(0.62267625,0.05924446){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}moving\end{tabular}}}}%
+    \put(0.62993489,0.0299892){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}platform\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=4]{teaser_image.pdf}}%
+    \put(0.26194817,0.15479802){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}self\end{tabular}}}}%
+    \put(0.26654327,0.2513284){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}singularity\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=5]{teaser_image.pdf}}%
+    \put(0.49922751,0.26189227){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}trajec-\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=6]{teaser_image.pdf}}%
+    \put(0.3880538,0.33272988){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\tiny{good}\end{tabular}}}}%
+    \put(0.56680304,0.33079844){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\tiny{bad}\end{tabular}}}}%
+    \put(0.22987221,0.1319401){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}collision\end{tabular}}}}%
+    \put(0.5025521,0.24028305){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}tories\end{tabular}}}}%
+    \put(0.69691379,0.25072839){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}leg\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=7]{teaser_image.pdf}}%
+    \put(0.8876508,0.30767999){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}fixed base\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=8]{teaser_image.pdf}}%
+  \end{picture}%
+\endgroup%
