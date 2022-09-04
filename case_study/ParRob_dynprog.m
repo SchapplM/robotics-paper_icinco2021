@@ -23,12 +23,12 @@ usr_recreate_mex = false; % recreate and recompile mex functions from templates
 usr_short_traj = false; % Trajektorie stark abkürzen, um prinzipielle Funktionalität zu zeigen
 usr_create_anim = false; % create an animation video of the robot motion
 usr_anim_realtime = false; % save real-time animation (video as long as trajectory in seconds)
-usr_highres_distrfig = true; % high resolution of the paper figure for performance criterion map
+usr_highres_distrfig = false; % high resolution of the paper figure for performance criterion map
 debug_plot = false;% Create debug plots
 usr_plot_robot = true; % Robot image for paper.
 usr_save_figures = true; % save figures to disk
 usr_load_discretization = true; % load a previously computed performance map (if trajectory stays the same)
-usr_load_dynprog = true;
+usr_load_dynprog = false;
 usr_load_traj = true; % load a previously computed joint space trajectory
 respath = fileparts(which('ParRob_dynprog.m'));
 assert(~isempty(respath), 'Aktuelles Matlab-Skript muss im Pfad sein');
@@ -776,9 +776,10 @@ end
 fprintf('Best platform orientation in starting pose of trajectory: %1.0fdeg\n', 180/pi*x1(6));
 
 %% Compute trajektory with dynamic programming
-for i_dpred = [1 2 3 4] % Different settings for DP
+for i_dpred = 5%[1 2 3 4] % Different settings for DP
   overlap = false;
   freetransfer = false;
+  stageopt_posik = false;
   if i_dpred == 1 % from Sect. 4.1
     % no redundancy in dynamic programming
     n_phi = 1+360/45; % wide discretization like SI-DP: 45°
@@ -798,13 +799,17 @@ for i_dpred = [1 2 3 4] % Different settings for DP
     RP.update_EE_FG(I_EE_full, I_EE_red);
     suffix_red = 'red';
     overlap = true;
-    freetransfer = false;
+    freetransfer = true;
+  elseif i_dpred == 5
+    n_phi = 1+360/45; % nur grobe Diskretisierung
+    RP.update_EE_FG(I_EE_full, I_EE_full);
+    suffix_red = 'posred'; % Nutze Redundanz nur mit Positions-IK auf Stufe
+    stageopt_posik = true;
   else
     error('Fall nicht definiert');
   end
   fprintf('DP with setting "%s", overlap=%d and %d states:\n', suffix_red, overlap, n_phi);
   % String für Namen der zu speichernden Dateien
-  use_free_stage_transfer = true;
   wn_traj_default = zeros(RP.idx_ik_length.wntraj,1);
   wn_traj_default(RP.idx_iktraj_wnP.qlim_hyp) = 1; % K_P (hyperb. limit)
   wn_traj_default(RP.idx_iktraj_wnD.qlim_hyp) = 0.6; % K_D (limit)
@@ -839,6 +844,7 @@ for i_dpred = [1 2 3 4] % Different settings for DP
     'wn', wnpos_dp, ...
     'use_free_stage_transfer', freetransfer, ...
     'overlap', overlap, ... % Überlappende Intervalle
+    'stageopt_posik', stageopt_posik, ... % Nach-Optimierung mit Positions-IK
     'debug', true, ...
     'continue_saved_state', false, ...
     'settings_ik', s_Traj, ...
@@ -922,7 +928,7 @@ for i_dpred = [1 2 3 4] % Different settings for DP
     error('Fall nicht definiert');
   end
 end
-
+return
 %% IK für Trajektorie berechnen (Vorbereitung)
 RP.update_EE_FG(I_EE_full, I_EE_red);
 % Abspeichern der Gelenkwinkel für verschiedene Varianten der Berechnung
