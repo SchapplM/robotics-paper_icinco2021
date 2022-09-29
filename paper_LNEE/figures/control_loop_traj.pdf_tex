@@ -102,7 +102,8 @@
     \put(0.2633342,0.04554332){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}(\ref{equ:ns_cases})\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=22]{control_loop_traj.pdf}}%
     \put(0.40649424,0.05509079){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\ddot{\bm{\theta}}'_{\mathrm{N}}$\end{tabular}}}}%
-    \put(0.51033922,0.09173937){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$-\dot{\bm{\theta}}_{}\mathrm{v}$\end{tabular}}}}%
+    \put(0.54532548,0.07861933){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$-$\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=23]{control_loop_traj.pdf}}%
+    \put(0.53587921,0.10422056){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}$\dot{\bm{\theta}}_{}\mathrm{v}$\end{tabular}}}}%
   \end{picture}%
 \endgroup%
