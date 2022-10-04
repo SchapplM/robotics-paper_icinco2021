@@ -226,7 +226,6 @@ Using a task-redundant robot with $n_{\bm{q}} \geq 6$ allows to optimize additio
 The iterative solution in the step $k$ is obtained with the Moore-Penrose pseudo-inverse by
 \begin{equation}
 \bm{q}^{k+1}=\bm{q}^{k} - 
-=
 \bm{\Psi}_{\partial \bm{q}}^{\#}\bm{\Psi}+(\bm{I}_{n_{\bm{q}}}-\bm{\Psi}_{\partial \bm{q}}^{\#}\bm{\Psi}_{\partial \bm{q}}) (-h_{\partial \bm{q}}^\transp),
 \label{eq:ser_position_ik}
 \end{equation}
@@ -834,7 +833,7 @@ Future work comprises finding rules for setting gain parameters of the nullspace
 		act. j. velo. limits & $\dot{\theta}_{i,\mathrm{max}}$ & 2 & \SI{}{\metre\per\second} \\
 		pass j. velo. lim. & --- & 45 & \SI{}{deg\per\second}\\
 		act. j. acc. limits & $\ddot{\theta}_{i,\mathrm{max}}$ & 20 & \SI{}{\metre\per\square\second} \\
-		pass j. acc. lim. & --- & 1146 & \SI{}{deg\per\second\square}\\
+		pass j. acc. lim. & --- & 1146 & \SI{}{deg\per\square\second}\\
 		\hline
 	\end{tabular}
 \end{table}
