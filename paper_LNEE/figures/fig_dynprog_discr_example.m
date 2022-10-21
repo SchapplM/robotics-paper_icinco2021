@@ -14,9 +14,11 @@ clear
 usr_highres_distrfig = true; % high resolution of the paper figure for performance criterion map
 %% Initialize
 % Initialize Robot
+% Default output directory (for paper)
 paperfig_path = fileparts(which('fig_dynprog_discr_example.m'));
-assert(~isempty(paperfig_path), 'The script currently run has to be in the PATH');
-data_path = fullfile(paperfig_path, '..', '..', 'case_study', 'data_LNEE');
+this_dir = fileparts(which('fig_dynprog_discr_example.m'));
+assert(~isempty(this_dir), 'The script currently run has to be in the PATH');
+data_path = fullfile(this_dir, '..', '..', 'case_study', 'data_LNEE');
 d = load(fullfile(data_path, 'robot_definition.mat'));
 RP = d.RP;
 parroblib_addtopath({RP.mdlname});
@@ -40,7 +42,7 @@ DP_XE = d.DP_XE;
 DP_Stats = d.DP_Stats;
 DP_TrajDetail = d.DP_TrajDetail;
 DP_settings = d.DP_settings;
-dpres_dir = fullfile(paperfig_path, '..', '..', 'case_study', 'LNEE_Traj1_DP_debug_costRMStraj_n9_nored');
+dpres_dir = fullfile(this_dir, '..', '..', 'case_study', 'LNEE_Traj1_DP_debug_costRMStraj_n9_nored');
 assert(exist(dpres_dir, 'file'), 'directory with debug information for DP does not exist');
 
 %% Prepare performance map plot
@@ -103,6 +105,10 @@ for i_stage1 = 1:3
       % Farbkarte muss danach wieder nach unten gesetzt werden
       ZOrderSet(Hdl_all.surf, 0);
     end
+  end
+  if isnan(DP_hdl(2))
+    % Es gibt keine "valid"-Linie, da alle Lösungen stage-optimal sind
+    DP_hdl(2) = plot(NaN, NaN, 'c-', 'LineWidth', 1);
   end
   xlim(minmax2(s_stage'));
   ylim([-70, 130]);
