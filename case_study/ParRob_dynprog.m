@@ -25,10 +25,10 @@ usr_create_anim = false; % create an animation video of the robot motion
 usr_anim_realtime = false; % save real-time animation (video as long as trajectory in seconds)
 usr_highres_distrfig = false; % high resolution of the paper figure for performance criterion map
 debug_plot = false;% Create debug plots
-usr_plot_robot = true; % Robot image for paper.
-usr_save_figures = true; % save figures to disk
+usr_plot_robot = false; % Robot image for paper.
+usr_save_figures = false; % save figures to disk
 usr_load_discretization = true; % load a previously computed performance map (if trajectory stays the same)
-usr_load_dynprog = false;
+usr_load_dynprog = true;
 usr_load_traj = true; % load a previously computed joint space trajectory
 respath = fileparts(which('ParRob_dynprog.m'));
 assert(~isempty(respath), 'Aktuelles Matlab-Skript muss im Pfad sein');
@@ -776,7 +776,7 @@ end
 fprintf('Best platform orientation in starting pose of trajectory: %1.0fdeg\n', 180/pi*x1(6));
 
 %% Compute trajektory with dynamic programming
-for i_dpred = 5%[1 2 3 4] % Different settings for DP
+for i_dpred = 5%[3 4]%[3 4 2]%[1 2 3 4] % Different settings for DP
   overlap = false;
   freetransfer = false;
   stageopt_posik = false;
@@ -795,15 +795,15 @@ for i_dpred = 5%[1 2 3 4] % Different settings for DP
     RP.update_EE_FG(I_EE_full, I_EE_red);
     suffix_red = 'red';
   elseif i_dpred == 4 % from Sect. 4.3; with overlapping intervals
-    n_phi = 1+360/90; % noch gröbere Diskretisierung (wegen Überlapp)
+    n_phi = 1+360/60; % gröbere Diskretisierung (wegen Überlapp)
     RP.update_EE_FG(I_EE_full, I_EE_red);
     suffix_red = 'red';
     overlap = true;
-    freetransfer = true;
+    freetransfer = false; % TODO: In Auswertung diskutieren?
   elseif i_dpred == 5
     n_phi = 1+360/45; % nur grobe Diskretisierung
     RP.update_EE_FG(I_EE_full, I_EE_full);
-    suffix_red = 'posred'; % Nutze Redundanz nur mit Positions-IK auf Stufe
+    suffix_red = 'nored'; % Nutze Redundanz nur mit Positions-IK auf Stufe
     stageopt_posik = true;
   else
     error('Fall nicht definiert');
@@ -866,6 +866,9 @@ for i_dpred = 5%[1 2 3 4] % Different settings for DP
   if overlap
     suffix = [suffix, '_overlap']; %#ok<AGROW> 
   end
+  if stageopt_posik
+    suffix = [suffix, '_stageopt']; %#ok<AGROW> 
+  end
   DP_settings.debug_dir = fullfile(respath, sprintf('LNEE_Traj%d_DP_debug_%s', usr_trajnum, suffix));
   mkdirs(DP_settings.debug_dir);
   filename_dynprog= fullfile(data_path, [filename_pre, '_dynprog_', suffix, '.mat']);
@@ -881,11 +884,13 @@ for i_dpred = 5%[1 2 3 4] % Different settings for DP
         DP_settings.n_phi ~= d.DP_settings.n_phi
       warning('IK settings from loaded results are different. Disregard');
     elseif ~isfield(d, 'collchecks') || size(d.collchecks,1)~=size(RP.collchecks,1) || ...
-      any(any(d.collchecks-RP.collchecks))
+        any(any(d.collchecks-RP.collchecks))
       warning('Collision checks loaded from results do not match. Disregard.');
     elseif ~isfield(d, 'collbodies_params') || size(d.collbodies_params,1)~=size(RP.collbodies.params,1) || ...
-      any(any(abs(d.collbodies_params-RP.collbodies.params) > 1e-10))
+        any(any(abs(d.collbodies_params-RP.collbodies.params) > 1e-10))
       warning('Collision bodes loaded from results do not match. Disregard.');
+    elseif ~isfield(d.DP_Stats, 'phi_range')
+      warning('DP output DP_Stats has no field phi_range. Disregard.');
     else
       DP_XE = d.DP_XE;
       DP_Stats = d.DP_Stats;
@@ -924,12 +929,16 @@ for i_dpred = 5%[1 2 3 4] % Different settings for DP
   elseif i_dpred == 4
     DP_TrajDetail_redol = DP_TrajDetail;
     DP_XE_redol = DP_XE;
+  elseif i_dpred == 5
+    DP_TrajDetail_redso = DP_TrajDetail;
+    DP_XE_redso = DP_XE;
   else
     error('Fall nicht definiert');
   end
 end
-return
+
 %% IK für Trajektorie berechnen (Vorbereitung)
+return
 RP.update_EE_FG(I_EE_full, I_EE_red);
 % Abspeichern der Gelenkwinkel für verschiedene Varianten der Berechnung
 Namen_Methoden = cell(1,5);
