@@ -14,9 +14,11 @@ usr_highres_distrfig = true; % high resolution of the paper figure for performan
 usr_overlapmode = true; % Switch between Sect. 4.2 and 4.3
 %% Initialize
 % Initialize Robot
+% Default output directory (for paper)
 paperfig_path = fileparts(which('fig_dynprog_interv_example.m'));
-assert(~isempty(paperfig_path), 'The script currently run has to be in the PATH');
-data_path = fullfile(paperfig_path, '..', '..', 'case_study', 'data_LNEE');
+this_dir = fileparts(which('fig_dynprog_interv_example.m'));
+assert(~isempty(this_dir), 'The script currently run has to be in the PATH');
+data_path = fullfile(this_dir, '..', '..', 'case_study', 'data_LNEE');
 d = load(fullfile(data_path, 'robot_definition.mat'));
 RP = d.RP;
 parroblib_addtopath({RP.mdlname});
@@ -36,7 +38,7 @@ s_tref = d.s_tref;
 if ~usr_overlapmode % Standard-Modus ohne überlappende Intervalle
   filename_post = ['_dynprog_costRMStraj_n9_red', '', '.mat'];
 else % Mit überlappenden Intervallen
-  filename_post = ['_dynprog_costRMStraj_n5_red_overlap', '', '.mat'];
+  filename_post = ['_dynprog_costRMStraj_n7_red_overlap', '', '.mat'];
 end
 filename_dynprog= fullfile(data_path, [filename_pre, filename_post]);
 assert(exist(filename_dynprog, 'file'), 'dynamic programming results file does not exist');
@@ -49,10 +51,10 @@ overlapstr = '';
 if ~usr_overlapmode 
   debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n9_red';
 else
-  debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n5_red_overlap';
+  debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n7_red_overlap';
   overlapstr= '_overlap';
 end
-dpres_dir = fullfile(paperfig_path, '..', '..', 'case_study', debugfoldername_full);
+dpres_dir = fullfile(this_dir, '..', '..', 'case_study', debugfoldername_full);
 % Use saved data in project folder
 % dpres_dir = fullfile(fileparts(which('robsynth_projektablage_path.m')), ...
 %   '06_Publikationen/2022_LNEE_3T2R_DynProg/DP_Ergebnisse/LNEE_DP_debug_costRMStraj_n9_red');
@@ -61,10 +63,9 @@ dpres_dir = fullfile(paperfig_path, '..', '..', 'case_study', debugfoldername_fu
 %     '06_Publikationen/2022_LNEE_3T2R_DynProg/DP_Ergebnisse/LNEE_DP_debug_costRMStraj_n9_red'];
 assert(exist(dpres_dir, 'file'), 'directory with debug information for DP does not exist');
 
-% Eigenschaften der Intervalle neu berechnen. Siehe dynprog_taskred_ik
-phi_range = linspace(DP_settings.phi_min, DP_settings.phi_max, DP_settings.n_phi);
-delta_phi = phi_range(2)-phi_range(1);
-
+% Eigenschaften der Intervalle aus Ergebnis ausgeben lassen. Siehe dynprog_taskred_ik
+delta_phi = DP_Stats.delta_phi;
+phi_range = DP_Stats.phi_range;
 %% Prepare performance map plot
 % Umrechnung auf hnpos
 abort_thresh_hpos = NaN(RP.idx_ik_length.hnpos, 1);
@@ -96,7 +97,7 @@ for i_stage1 = [1 2] % create one figure for each of the first two stages
     if ~usr_overlapmode
       i_state2_range = [1 4 7];
     else % Wähle Zustände so aus, dass man die Überlappung sieht
-      i_state2_range = [3 4 8]; % 8 liegt zwischen 3 und 4 (da von 6 an neu beginnend)
+      i_state2_range = [3 4 9]; % 6 liegt zwischen 2 und 3 (da von 5 an neu beginnend)
     end
     i_state1 = 1;
   else
@@ -235,7 +236,7 @@ for i_stage1 = 1:length(axhdl)
   d_state = load(fullfile(dpres_dir, sprintf('dp_stage%d_final.mat', i_stage1)));
   tfn = dir(fullfile(dpres_dir, sprintf('dp_stage%d_state*_to*_result.mat', i_stage1)));
   % Gehe alle Transfers durch, die gespeichert sind
-  hdl_all = NaN(length(tfn), 2);
+  hdl_all = NaN(length(tfn), 2); % Erste Spalte Handle, zweite Spalte Kategorie als Zahl
   for ii = 1:length(tfn)
     d_ii = load(fullfile(dpres_dir, tfn(ii).name));
     i_state1 = d_ii.k;
