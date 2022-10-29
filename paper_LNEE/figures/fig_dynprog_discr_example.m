@@ -82,9 +82,11 @@ fprintf('Zeichne Bilder für DP Einzeltransfer\n');
 pmfhdl = change_current_figure(1); clf;
 axhdl = NaN(1,3);
 DP_hdl = NaN(3,1); % Handle für die verschiedenen Linien (für Legende)
-for i_stage1 = 1:3
+plotnum = 0;
+for i_stage1 = 1:3 % 4:6
+  plotnum = plotnum + 1;
   s_stage = DP_settings.PM_s_tref(DP_settings.IE(i_stage1):DP_settings.IE(i_stage1+1));
-  axhdl(i_stage1) = subplot(1,3,i_stage1); hold on;
+  axhdl(plotnum) = subplot(1,3,plotnum); hold on;
   settings_perfmap_stage = settings_perfmap;
   settings_perfmap_stage.s_range_plot = minmax2(s_stage') + [-0.1, 0.1];
   t1 = tic();
@@ -96,6 +98,7 @@ for i_stage1 = 1:3
   d_state = load(fullfile(dpres_dir, sprintf('dp_stage%d_final.mat', i_stage1)));
   tfn = dir(fullfile(dpres_dir, sprintf('dp_stage%d_state*_to*_result.mat', i_stage1)));
   % Gehe alle Transfers durch, die gespeichert sind
+  % TODO: auch magenta-gestrichelt zulassen (im Beispiel nicht vorhanden)
   hdl_all = NaN(length(tfn), 2); % Erste Spalte Handle, zweite Spalte Kategorie als Zahl 
   for ii = 1:length(tfn)
     d_ii = load(fullfile(dpres_dir, tfn(ii).name));
@@ -108,8 +111,15 @@ for i_stage1 = 1:3
 %     hdl = plot(s_stage(1:length(d_i.X6_traj)), 180/pi*d_i.X6_traj, 'k--'); % TODO: _ref
     hdl_all(ii,1) = plot(s_stage(Iplot), 180/pi*d_ii.X6_traj(Iplot), 'k-');
     set(hdl_all(ii,1), 'LineWidth', 1);
+%     if length(d_ii.X6_traj) == length(d_ii.X6_traj_ref) && ...
+%         all(abs(d_ii.z_l - phi_range) > 1e-6)
+%       % Muss zusätzlicher Zustand sein, da nicht in diskretem Zielzustand
+%       set(hdl_all(ii,1), 'LineStyle', '--');
+%       DP_hdl(4) = hdl_all(ii,1);
+%     end
     if usr_stageoptmode && i_state2 > size(d_final.I_all,2)
       set(hdl_all(ii,1), 'LineStyle', '--'); % Teil der neu optimierten Linien
+      DP_hdl(4) = hdl_all(ii,1);
     end
     % Prüfe ob es sich um die optimale Teil-Politik handelt
     if i_state2 <= size(d_final.I_all,2) && d_final.I_all(i_stage1+1,i_state2) == i_state1
@@ -122,17 +132,17 @@ for i_stage1 = 1:3
       DP_hdl(2) = hdl_all(ii,1); % line for valid transition
     else
       hdl_all(ii,2) = 3;
-      if i_state2 <= size(d_final.I_all,2)
+%       if i_state2 <= size(d_final.I_all,2)
         DP_hdl(1) = hdl_all(ii,1); % line for invalid transition
-      else
-        DP_hdl(4) = hdl_all(ii,1); % for stage-optimization legend entry
-      end
+%       else
+%         DP_hdl(4) = hdl_all(ii,1); % for stage-optimization legend entry
+%       end
     end
   end
-  if isnan(DP_hdl(2))
-    % Es gibt keine "valid"-Linie, da alle Lösungen stage-optimal sind
-    DP_hdl(2) = plot(NaN, NaN, 'c-', 'LineWidth', 1);
-  end
+  % Valid-Linie neu zeichnen. Ursachen: 
+  % Es gibt keine "valid"-Linie, da alle Lösungen stage-optimal sind.
+  % Oder: Die Valid-Linie ist gestrichelt, bei stageopt-Modus
+  DP_hdl(2) = plot(NaN, NaN, 'c-', 'LineWidth', 1);
   % Gehe alle Handles durch. Zuerst alle cyan nach hinten, dann alle
   % schwarzen, dann Farbkarte
   for ii = find(hdl_all(:,2)==2)' % 2=cyan
@@ -147,17 +157,17 @@ for i_stage1 = 1:3
   ylim([-70, 130]);
 
   % Put text for state interval
-  if i_stage1 > 1
+  if plotnum > 1
     ylabel('');
   else
     ylabel('Redundant coordinate $\varphi_z$ in deg', 'interpreter', 'latex');
   end
-  if i_stage1 < length(axhdl)
+  if plotnum < length(axhdl)
     delete(colorbar());
   end
-  title(sprintf('\\textbf{(%s)} stage %d', char(96+i_stage1), i_stage1), ...
-    'interpreter', 'latex');
-  if i_stage1 ~= 2
+  title(sprintf('\\textbf{(%s)} stage %d', char(96+plotnum), i_stage1), ...
+    'interpreter', 'latex'); % Beschriftung a,b,c
+  if plotnum ~= 2
     xlabel('');
   else
     xlabel('Normalized trajectory progress $s$', 'interpreter', 'latex');
@@ -180,7 +190,7 @@ if usr_stageoptmode == 0
   LegHdl = [DP_hdl(1:3); VM_hdl(I_vmactive)];
   LegLbl = ['invalid', 'valid', 'optimal', s_pmp.violation_markers(1,I_vmactive)];
 else
-  LegHdl = [DP_hdl; VM_hdl(I_vmactive)];
+  LegHdl = [DP_hdl(1:4); VM_hdl(I_vmactive)];
   LegLbl = ['invalid', 'valid', 'optimal', 'add. stage opt.', s_pmp.violation_markers(1,I_vmactive)];
 end
 % LegLbl{strcmp(LegLbl,'qlim_hyp')} = 'Joint Limit';
