@@ -11,8 +11,8 @@
 clc
 clear
 % User settings
-usr_highres_distrfig = false; % high resolution of the paper figure for performance criterion map
-usr_stageoptmode = true;
+usr_highres_distrfig = true; % high resolution of the paper figure for performance criterion map
+usr_stageoptmode = false;
 %% Initialize
 % Initialize Robot
 % Default output directory (for paper)
@@ -194,10 +194,9 @@ legendflex(LegHdl, LegLbl, 'anchor', {'n','n'}, ...
   'xscale', 0.6, ... % Kleine Symbole
   ... 'padding', [-3,-3,3], ... % Leerraum reduzieren
   'box', 'on');
-pdfname = 'dp_discr_stage1_to_3';
-
+pdfname = sprintf('dp_discr%s_stage1_to_3', stageoptstr);
 exportgraphics(pmfhdl, fullfile(paperfig_path, [pdfname, '.pdf']),'ContentType','vector') 
-
+fprintf('Bild gespeichert: %s\n', pdfname);
 % Zur Kompression des Bildes (bringt ca. 30% bei hoher Auflösung):
 cd(paperfig_path);
 ghostscript(['-dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 ', ...
@@ -245,6 +244,23 @@ for i_stage1 = 1:length(DP_settings.IE)-1
     end
   end
 end
+% Plot nachbearbeiten
+axch = get(gca, 'children');
+% Setze alle nicht-optimalen Linien nach hinten
+for i = 1:length(axch)
+  if strcmp(get(axch(i),'type'), 'line') && all(get(axch(i), 'color') == [0 1 1]) % cyan
+    ZOrderSet(axch(i), 0);
+  end
+end
+% Setze die global optimale Linie ganz nach vorne
+for i = 1:length(axch)
+  if strcmp(get(axch(i),'type'), 'line') && all(get(axch(i), 'color') == [0 0 1]) % blau
+    ZOrderSet(axch(i), 1);
+  end
+end
+ZOrderSet(Hdl_all.surf,0); % Farbkarte wieder nach hinten
+% Nehme nicht die global-optimale Trajektorie aus Ergebnis-Datei, sondern
+% die von oben (sollte keinen Unterschied darstellen).
 % d_output = load(fullfile(dpres_dir, 'dp_output.mat'), 'TrajDetail');
 % Iplot = select_plot_indices_downsample_nonuniform(...
 %   DP_settings.PM_s_tref, d_output.TrajDetail.X6, 0.05, 3*pi/180);
@@ -277,10 +293,11 @@ legendflex(LegHdl, LegLbl, 'anchor', {'n','n'}, ...
   'xscale', 0.5, ... % Kleine Symbole
   'padding', [1,1,0], ... % Leerraum reduzieren
   'box', 'on');
-pdfname = 'dp_discr_result';
+pdfname = sprintf('dp_discr%s_result', stageoptstr);
 % TODO: Beide Export-Befehle führen bei Windows-Laptop zu Fehler.
 exportgraphics(pmfhdl, fullfile(paperfig_path, [pdfname, '.pdf']),'ContentType','vector') % ,'Resolution','100'
 export_fig(pmfhdl, fullfile(paperfig_path, [pdfname, '2.pdf']));
+fprintf('Bild gespeichert: %s\n', pdfname);
 cd(paperfig_path);
 ghostscript(['-dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 ', ...
   '-dPDFSETTINGS=/prepress -sOutputFile=',pdfname,'_compressed.pdf ',pdfname,'.pdf']);

@@ -23,7 +23,7 @@ usr_recreate_mex = false; % recreate and recompile mex functions from templates
 usr_short_traj = false; % Trajektorie stark abkürzen, um prinzipielle Funktionalität zu zeigen
 usr_create_anim = false; % create an animation video of the robot motion
 usr_anim_realtime = false; % save real-time animation (video as long as trajectory in seconds)
-usr_highres_distrfig = false; % high resolution of the paper figure for performance criterion map
+usr_highres_distrfig = true; % high resolution of the paper figure for performance criterion map
 debug_plot = false;% Create debug plots
 usr_plot_robot = false; % Robot image for paper.
 usr_save_figures = false; % save figures to disk
@@ -776,7 +776,7 @@ end
 fprintf('Best platform orientation in starting pose of trajectory: %1.0fdeg\n', 180/pi*x1(6));
 
 %% Compute trajektory with dynamic programming
-for i_dpred = 5%[3 4]%[3 4 2]%[1 2 3 4] % Different settings for DP
+for i_dpred = 1:5 % Different settings for DP
   overlap = false;
   freetransfer = false;
   stageopt_posik = false;
@@ -800,7 +800,7 @@ for i_dpred = 5%[3 4]%[3 4 2]%[1 2 3 4] % Different settings for DP
     suffix_red = 'red';
     overlap = true;
     freetransfer = false; % TODO: In Auswertung diskutieren?
-  elseif i_dpred == 5
+  elseif i_dpred == 5 % Additional evaluation for PhD thesis (stage optimization)
     n_phi = 1+360/45; % nur grobe Diskretisierung
     RP.update_EE_FG(I_EE_full, I_EE_full);
     suffix_red = 'nored'; % Nutze Redundanz nur mit Positions-IK auf Stufe
@@ -870,10 +870,10 @@ for i_dpred = 5%[3 4]%[3 4 2]%[1 2 3 4] % Different settings for DP
     suffix = [suffix, '_stageopt']; %#ok<AGROW> 
   end
   DP_settings.debug_dir = fullfile(respath, sprintf('LNEE_Traj%d_DP_debug_%s', usr_trajnum, suffix));
-  mkdirs(DP_settings.debug_dir);
   filename_dynprog= fullfile(data_path, [filename_pre, '_dynprog_', suffix, '.mat']);
   dynprog_loaded_offline = false;
-  if usr_load_dynprog && ~exist(filename_dynprog, 'file')
+  if usr_load_dynprog && (~exist(filename_dynprog, 'file') || ...
+      ~exist(DP_settings.debug_dir, 'file'))
     fprintf('Unable to load discretization results from %s\n', filename_dynprog);
   elseif usr_load_dynprog && exist(filename_dynprog, 'file')
     d = load(filename_dynprog);
@@ -898,6 +898,7 @@ for i_dpred = 5%[3 4]%[3 4 2]%[1 2 3 4] % Different settings for DP
       dynprog_loaded_offline = true;
     end
   end
+  mkdirs(DP_settings.debug_dir);
   if ~dynprog_loaded_offline
     t1 = tic();
     fprintf('Start computation for dynamic programming of trajectory\n');

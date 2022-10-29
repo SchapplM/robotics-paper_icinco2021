@@ -11,7 +11,7 @@ clc
 clear
 % User settings
 usr_highres_distrfig = true; % high resolution of the paper figure for performance criterion map
-usr_overlapmode = true; % Switch between Sect. 4.2 and 4.3
+usr_overlapmode = false; % Switch between Sect. 4.2 and 4.3
 %% Initialize
 % Initialize Robot
 % Default output directory (for paper)
@@ -210,7 +210,8 @@ for i_stage1 = [1 2] % create one figure for each of the first two stages
     ... 'padding', [-3,-3,3], ... % Leerraum reduzieren
     'box', 'on');
   pdfname = sprintf('dp_interv%s_stage%d_3cases', overlapstr, i_stage1);
-  exportgraphics(pmfhdl, fullfile(paperfig_path, [pdfname, '.pdf']),'ContentType','vector') 
+  exportgraphics(pmfhdl, fullfile(paperfig_path, [pdfname, '.pdf']),'ContentType','vector');
+  fprintf('Bild gespeichert: %s\n', pdfname);
   cd(paperfig_path);
   ghostscript(['-dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 ', ...
     '-dPDFSETTINGS=/prepress -sOutputFile=',pdfname,'_compressed.pdf ',pdfname,'.pdf']);
@@ -359,7 +360,8 @@ legendflex(LegHdl, LegLbl, 'anchor', {'n','n'}, ...
   ... 'padding', [-3,-3,3], ... % Leerraum reduzieren
   'box', 'on');
 pdfname = ['dp_interv', overlapstr, '_stage1_to_2'];
-exportgraphics(pmfhdl, fullfile(paperfig_path, [pdfname, '.pdf']),'ContentType','vector') 
+exportgraphics(pmfhdl, fullfile(paperfig_path, [pdfname, '.pdf']),'ContentType','vector');
+fprintf('Bild gespeichert: %s\n', pdfname);
 cd(paperfig_path);
 ghostscript(['-dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 ', ...
   '-dPDFSETTINGS=/prepress -sOutputFile=',pdfname,'_compressed.pdf ',pdfname,'.pdf']);
@@ -459,7 +461,8 @@ legendflex(LegHdl, LegLbl, 'anchor', {'n','n'}, ...
   ...'padding', [1,1,2], ... % Leerraum reduzieren
   'box', 'on');
 pdfname = ['dp_interv', overlapstr, '_result'];
-exportgraphics(pmfhdl, fullfile(paperfig_path, [pdfname,'.pdf']),'ContentType','vector') % ,'Resolution','100'
+exportgraphics(pmfhdl, fullfile(paperfig_path, [pdfname,'.pdf']),'ContentType','vector'); % ,'Resolution','100'
+fprintf('Bild gespeichert: %s\n', pdfname);
 cd(paperfig_path);
 ghostscript(['-dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 ', ...
   '-dPDFSETTINGS=/prepress -sOutputFile=',pdfname,'_compressed.pdf ',pdfname,'.pdf']);
