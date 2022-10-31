@@ -147,6 +147,10 @@ for i_stage1 = 1:3 % 4:6
   % Es gibt keine "valid"-Linie, da alle Lösungen stage-optimal sind.
   % Oder: Die Valid-Linie ist gestrichelt, bei stageopt-Modus
   DP_hdl(2) = plot(NaN, NaN, 'c-', 'LineWidth', 1);
+  % Stage-Opt.-Linie für Legende (definierte Farbe)
+  if usr_stageoptmode
+    DP_hdl(4) = plot(NaN, NaN, 'k--', 'LineWidth', 1);
+  end
   % Gehe alle Handles durch. Zuerst alle cyan nach hinten, dann alle
   % schwarzen, dann Farbkarte
   for ii = find(hdl_all(:,2)==2)' % 2=cyan
@@ -263,6 +267,10 @@ for i_stage1 = 1:length(DP_settings.IE)-1
     end
   end
 end
+% Stage-Opt.-Linie für Legende (definierte Farbe)
+if usr_stageoptmode
+  DP_hdl(4) = plot(NaN, NaN, 'k--', 'LineWidth', 1);
+end
 % Plot nachbearbeiten
 axch = get(gca, 'children');
 % Setze alle nicht-optimalen Linien nach hinten
@@ -290,12 +298,12 @@ xlim(minmax2(DP_settings.PM_s_tref'));
 ylim([-70, 130]);
 set(Hdl_all.cb, 'Position', [0.90, 0.03, 0.02, 0.9]); % put cb to the right
 cyh=ylabel(Hdl_all.cb, 'Performance criterion $h$ (cond.)', 'Rotation', 90, 'interpreter', 'latex');
-set(cyh, 'Position', [3.3, 500, 0]); % put cblabel to the left
+set(cyh, 'Position', [3.3, 620, 0]); % put cblabel to the left
 figure_format_publication(pmfhdl);
 set_size_plot_subplot(pmfhdl, ...
-  12.2,5,gca,... % 12.2 according to llncs.cls
-  0.09,0.12,0.14,0.16,... %l r u d
-  0.00,0) % x y
+  16,5,gca,...
+  0.06,0.12,0.13,0.16,... %l r u d
+  0.0,0) % x y
 drawnow();
 % Legende
 I_vmactive = [2 4]; % Manuelle Auswahl der aktiven Marker. Referenz: s_pmp.violation_markers

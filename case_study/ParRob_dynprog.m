@@ -808,7 +808,7 @@ for i_dpred = 1:5 % Different settings for DP
   else
     error('Fall nicht definiert');
   end
-  fprintf('DP with setting "%s", overlap=%d and %d states:\n', suffix_red, overlap, n_phi);
+  fprintf('DP with setting "%s", overlap=%d and max. %d states:\n', suffix_red, overlap, n_phi);
   % String für Namen der zu speichernden Dateien
   wn_traj_default = zeros(RP.idx_ik_length.wntraj,1);
   wn_traj_default(RP.idx_iktraj_wnP.qlim_hyp) = 1; % K_P (hyperb. limit)
@@ -899,6 +899,9 @@ for i_dpred = 1:5 % Different settings for DP
     end
   end
   mkdirs(DP_settings.debug_dir);
+  if ~exist(DP_settings.debug_dir, 'file')
+    error('Debug-Ordner existiert nicht. Fehler mit Sym-Link?');
+  end
   if ~dynprog_loaded_offline
     t1 = tic();
     fprintf('Start computation for dynamic programming of trajectory\n');

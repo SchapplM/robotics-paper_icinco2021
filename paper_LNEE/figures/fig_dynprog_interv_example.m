@@ -267,7 +267,9 @@ for i_stage1 = 1:length(axhdl)
       end
     else
       hdl_all(ii,2) = 3;
-      DP_hdl(1) = hdl_all(ii,1); % line for invalid transition
+      if i_state2 <= length(phi_range)
+        DP_hdl(1) = hdl_all(ii,1); % line for invalid transition
+      end
     end
   end
   % Gehe alle Handles durch. Zuerst alle cyan nach hinten, dann alle
@@ -298,6 +300,9 @@ for i_stage1 = 1:length(axhdl)
   if usr_overlapmode == 0 % Achsbeschriftung rechts
 %     text(i_stage1+0.07, 180/pi*phi_range(8)-35, '$[x_{\mathrm{ref},8}]$', ...
 %       'Rotation', 90, 'interpreter', 'latex'); % Legende für rechte Achse
+  end
+  if usr_overlapmode % Legendeneintrag für überlappende Intervalle
+    DP_hdl(4) = plot(NaN,NaN,'k--', 'LineWidth', 2);
   end
   quiver(i_stage1*ones(1,length(phi_range)), 180/pi*phi_range, ...
     zeros(1,length(phi_range)),  180/pi*0.9*delta_phi/2*ones(1,length(phi_range)), 'off', 'k.', 'LineWidth', 1);
@@ -342,7 +347,7 @@ if usr_overlapmode == 0
   LegLbl{strcmp(LegLbl,'jac_cond')} = 'singularity';
   LegLbl{strcmp(LegLbl,'coll_hyp')} = 'collision';
 else
-  LegHdl = [DP_hdl; VM_hdl(I_vmactive)];
+  LegHdl = [DP_hdl(1:4); VM_hdl(I_vmactive)];
   LegLbl = ['invalid', 'valid', 'optimal', 'add. overlap', s_pmp.violation_markers(1,I_vmactive)];
   LegLbl{strcmp(LegLbl,'jac_cond')} = 'sing.'; % Shorter text
   LegLbl{strcmp(LegLbl,'coll_hyp')} = 'coll.';
@@ -395,7 +400,7 @@ for i_stage1 = 1:length(DP_settings.IE)-1
     Iplot = select_plot_indices_downsample_nonuniform(...
       s_stage(1:length(d_ii.X6_traj)), d_ii.X6_traj, 0.05, 3*pi/180);
     hdl = plot(s_stage(Iplot), 180/pi*d_ii.X6_traj(Iplot), 'c-', 'LineWidth', 1);
-    if usr_stageoptmode && i_state2 > length(phi_range)
+    if usr_overlapmode && i_state2 > length(phi_range)
       set(hdl, 'LineStyle', '--'); % Teil der neu optimierten Linien
       DP_hdl(4) = hdl;
     end
@@ -403,14 +408,21 @@ for i_stage1 = 1:length(DP_settings.IE)-1
         d_final.I_best(i_stage1+1) == i_state2
       set(hdl, 'Color', 'b');
       set(hdl, 'LineWidth', 1.5);
-      DP_hdl(3) = hdl; % optimal transmission (globally)
-    elseif i_state2 <= size(d_final.I_all,2) &&  d_final.I_all(i_stage1+1,i_state2) == i_state1
+      if i_state2 <= length(phi_range)
+        DP_hdl(3) = hdl; % optimal transmission (globally)
+      end
+    elseif d_final.I_all(i_stage1+1,i_state2) == i_state1
       DP_hdl(2) = hdl; % optimal transmission (to this stage)
       set(DP_hdl(2), 'Color', 'm');
     else
-      DP_hdl(1) = hdl;
+      if i_state2 <= length(phi_range)
+        DP_hdl(1) = hdl;
+      end
     end
   end
+end
+if usr_overlapmode % Legendeneintrag für überlappende Intervalle
+  DP_hdl(4) = plot(NaN,NaN,'k--', 'LineWidth', 2);
 end
 % Plot nachbearbeiten
 axch = get(gca, 'children');
@@ -449,11 +461,22 @@ set_size_plot_subplot(pmfhdl, ...
 drawnow();
 % Legende
 I_vmactive = [2 4]; % Manuelle Auswahl der aktiven Marker. Referenz: s_pmp.violation_markers
-LegHdl = [DP_hdl; VM_hdl(I_vmactive)];
-LegLbl = ['valid', 'stage opt.', 'global opt.',s_pmp.violation_markers(1,I_vmactive)];
+
+if usr_overlapmode == 0
+  LegHdl = [DP_hdl(1:3); VM_hdl(I_vmactive)];
+  LegLbl = ['valid', 'stage opt.', 'global opt.',s_pmp.violation_markers(1,I_vmactive)];
+  LegLbl{strcmp(LegLbl,'jac_cond')} = 'singularity';
+  LegLbl{strcmp(LegLbl,'coll_hyp')} = 'collision';
+else
+  LegHdl = [DP_hdl(1:4); VM_hdl(I_vmactive)];
+  LegLbl = ['valid', 'stage opt.', 'global opt.','add. overlap', s_pmp.violation_markers(1,I_vmactive)];
+  % Text kürzer. Sonst gehen die langen Striche in der Legende nicht und
+  % die Strichelung ist dort falsch.
+  LegLbl{strcmp(LegLbl,'jac_cond')} = 'sing.';
+  LegLbl{strcmp(LegLbl,'coll_hyp')} = 'coll.';
+end
+
 % LegLbl{strcmp(LegLbl,'qlim_hyp')} = 'joint limit';
-LegLbl{strcmp(LegLbl,'jac_cond')} = 'singularity';
-LegLbl{strcmp(LegLbl,'coll_hyp')} = 'collision';
 legendflex(LegHdl, LegLbl, 'anchor', {'n','n'}, ...
   'ref', pmfhdl, ... % an Figure ausrichten (mitten oben)
   'buffer', [0 -1], ... % Kein Versatz notwendig, da mittig oben
