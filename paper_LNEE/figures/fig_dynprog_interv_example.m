@@ -66,6 +66,8 @@ assert(exist(dpres_dir, 'file'), 'directory with debug information for DP does n
 % Eigenschaften der Intervalle aus Ergebnis ausgeben lassen. Siehe dynprog_taskred_ik
 delta_phi = DP_Stats.delta_phi;
 phi_range = DP_Stats.phi_range;
+fprintf('%d reference interaval centers actually used with step size %1.1f°: [%s]°\n', ...
+  length(phi_range), 180/pi*delta_phi, disp_array(phi_range*180/pi, '%1.1f'));
 %% Prepare performance map plot
 % Umrechnung auf hnpos
 abort_thresh_hpos = NaN(RP.idx_ik_length.hnpos, 1);
@@ -298,8 +300,8 @@ for i_stage1 = 1:length(axhdl)
     end
   end
   if usr_overlapmode == 0 % Achsbeschriftung rechts
-    text(i_stage1+0.07, 180/pi*phi_range(8)-35, '$[x_{\mathrm{ref},8}]$', ...
-      'Rotation', 90, 'interpreter', 'latex'); % Legende für rechte Achse
+%     text(i_stage1+0.07, 180/pi*phi_range(8)-35, '$[x_{\mathrm{ref},8}]$', ...
+%       'Rotation', 90, 'interpreter', 'latex'); % Legende für rechte Achse
   end
   quiver(i_stage1*ones(1,length(phi_range)), 180/pi*phi_range, ...
     zeros(1,length(phi_range)),  180/pi*0.9*delta_phi/2*ones(1,length(phi_range)), 'off', 'k.', 'LineWidth', 1);

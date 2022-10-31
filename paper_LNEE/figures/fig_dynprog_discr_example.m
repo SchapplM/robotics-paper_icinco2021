@@ -61,6 +61,8 @@ assert(exist(dpres_dir, 'file'), 'directory with debug information for DP does n
 % Eigenschaften der Intervalle aus Ergebnis ausgeben lassen. Siehe dynprog_taskred_ik
 delta_phi = DP_Stats.delta_phi;
 phi_range = DP_Stats.phi_range;
+fprintf('%d reference states actually used with step size %1.1f°: [%s]°\n', ...
+  length(phi_range), 180/pi*delta_phi, disp_array(phi_range*180/pi, '%1.1f'));
 %% Prepare performance map plot
 % Umrechnung auf hnpos
 abort_thresh_hpos = NaN(RP.idx_ik_length.hnpos, 1);
