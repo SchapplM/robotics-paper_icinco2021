@@ -847,6 +847,7 @@ for i_dpred = 1:5 % Different settings for DP
     'stageopt_posik', stageopt_posik, ... % Nach-Optimierung mit Positions-IK
     'debug', false, ...
     'fastdebug', false, ... % true: damit Verzicht auf Prüfung und schnelleres Zeichnen
+    'phi_lim_x0_dependent', false, ... % true: Grenzen abhängig von phi0 wählen
     'continue_saved_state', false, ...
     'settings_ik', s_Traj, ...
     'cost_mode', 'RMStraj', ... % Alternative: 'max', 'RMStime', 'average'
@@ -869,6 +870,9 @@ for i_dpred = 1:5 % Different settings for DP
   end
   if stageopt_posik
     suffix = [suffix, '_stageopt']; %#ok<AGROW> 
+  end
+  if ~DP_settings.phi_lim_x0_dependent
+    suffix = [suffix, '_phi0fix']; %#ok<AGROW> 
   end
   DP_settings.debug_dir = fullfile(respath, sprintf('LNEE_Traj%d_DP_debug_%s', usr_trajnum, suffix));
   filename_dynprog= fullfile(data_path, [filename_pre, '_dynprog_', suffix, '.mat']);
