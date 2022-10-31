@@ -82,6 +82,8 @@ d_final = load(fullfile(dpres_dir, 'dp_final.mat'), 'I_all', 'I_best');
 %% Plot performance map with three first stages (Figure 3 of the paper)
 fprintf('Zeichne Bilder für DP Einzeltransfer\n');
 pmfhdl = change_current_figure(1); clf;
+set(pmfhdl, 'Name', sprintf('DP_Stage1to3_%s', stageoptstr), 'NumberTitle', 'off');
+ 
 axhdl = NaN(1,3);
 DP_hdl = NaN(3,1); % Handle für die verschiedenen Linien (für Legende)
 plotnum = 0;
@@ -200,7 +202,7 @@ LegLbl{strcmp(LegLbl,'jac_cond')} = 'singularity';
 LegLbl{strcmp(LegLbl,'coll_hyp')} = 'collision';
 legendflex(LegHdl, LegLbl, 'anchor', {'n','n'}, ...
   'ref', pmfhdl, ... % an Figure ausrichten (mitten oben)
-  'buffer', [0 -1], ... % Kein Versatz notwendig, da mittig oben
+  'buffer', [-10*usr_stageoptmode, -1], ... % Versatz nach links notwendig notwendig
   'ncol', 0, 'nrow', 1, ... % eine Zeile für Legende
   'fontsize', 8, ...
   'xscale', 0.6, ... % Kleine Symbole
@@ -219,6 +221,7 @@ fprintf('Zeichne gesamte Redundanzkarte für DP\n');
 settings_perfmap_complete = settings_perfmap;
 settings_perfmap_complete.markermindist = [0.2, 15]; % Größerer Markerabstand, da kleiner im Bild
 pmfhdl = change_current_figure(3); clf; hold on;
+set(pmfhdl, 'Name', ['DP_Perfmap_All',stageoptstr], 'NumberTitle', 'off');
 DP_hdl = NaN(3,1); % Handle für die verschiedenen Linien (für Legende)
 t1 = tic();
 [Hdl_all, s_pmp] = RP.perfmap_plot(H_all, phiz_range, s_ref, settings_perfmap_complete);
@@ -243,6 +246,10 @@ for i_stage1 = 1:length(DP_settings.IE)-1
     Iplot = select_plot_indices_downsample_nonuniform(...
       s_stage(1:length(d_ii.X6_traj)), d_ii.X6_traj, 0.05, 3*pi/180);
     hdl = plot(s_stage(Iplot), 180/pi*d_ii.X6_traj(Iplot), 'c-', 'LineWidth', 1);
+    if usr_stageoptmode && i_state2 > size(d_final.I_all,2)
+      set(hdl, 'LineStyle', '--'); % Teil der neu optimierten Linien
+      DP_hdl(4) = hdl;
+    end
     if d_final.I_best(i_stage1) == i_state1 && ...
         d_final.I_best(i_stage1+1) == i_state2
       set(hdl, 'Color', 'b');
@@ -292,8 +299,14 @@ set_size_plot_subplot(pmfhdl, ...
 drawnow();
 % Legende
 I_vmactive = [2 4]; % Manuelle Auswahl der aktiven Marker. Referenz: s_pmp.violation_markers
-LegHdl = [DP_hdl; VM_hdl(I_vmactive)];
-LegLbl = ['valid', 'stage opt.', 'global opt.', s_pmp.violation_markers(1,I_vmactive)];
+if usr_stageoptmode == 0
+  LegHdl = [DP_hdl(1:3); VM_hdl(I_vmactive)];
+  LegLbl = ['valid', 'stage opt.', 'global opt.', s_pmp.violation_markers(1,I_vmactive)];
+else
+  LegHdl = [DP_hdl(1:4); VM_hdl(I_vmactive)];
+  LegLbl = ['valid', 'stage opt.', 'global opt.', 'add. stage opt.', s_pmp.violation_markers(1,I_vmactive)];
+end
+
 % LegLbl{strcmp(LegLbl,'qlim_hyp')} = 'joint limit';
 LegLbl{strcmp(LegLbl,'jac_cond')} = 'singularity';
 LegLbl{strcmp(LegLbl,'coll_hyp')} = 'collision';
