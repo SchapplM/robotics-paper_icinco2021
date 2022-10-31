@@ -121,26 +121,26 @@ for i_stage1 = 1:3 % 4:6
 %       set(hdl_all(ii,1), 'LineStyle', '--');
 %       DP_hdl(4) = hdl_all(ii,1);
 %     end
-    if usr_stageoptmode && i_state2 > size(d_final.I_all,2)
+    if usr_stageoptmode && i_state2 > length(phi_range)
       set(hdl_all(ii,1), 'LineStyle', '--'); % Teil der neu optimierten Linien
       DP_hdl(4) = hdl_all(ii,1);
     end
     % Prüfe ob es sich um die optimale Teil-Politik handelt
-    if i_state2 <= size(d_final.I_all,2) && d_final.I_all(i_stage1+1,i_state2) == i_state1
+    if d_final.I_all(i_stage1+1,i_state2) == i_state1
       hdl_all(ii,2) = 1;
       set(hdl_all(ii,1), 'Color', 'm');
-      DP_hdl(3) = hdl_all(ii,1); % optimal transmission (to this stage)
+      if i_state2 <= length(phi_range)
+        DP_hdl(3) = hdl_all(ii,1); % optimal transmission (to this stage)
+      end
     elseif ~isinf(d_state.F_stage(i_state1, i_state2))
       hdl_all(ii,2) = 2;
       set(hdl_all(ii,1), 'Color', 'c');
-      DP_hdl(2) = hdl_all(ii,1); % line for valid transition
+      if i_state2 <= length(phi_range)
+        DP_hdl(2) = hdl_all(ii,1); % line for valid transition
+      end
     else
       hdl_all(ii,2) = 3;
-%       if i_state2 <= size(d_final.I_all,2)
-        DP_hdl(1) = hdl_all(ii,1); % line for invalid transition
-%       else
-%         DP_hdl(4) = hdl_all(ii,1); % for stage-optimization legend entry
-%       end
+      DP_hdl(1) = hdl_all(ii,1); % line for invalid transition
     end
   end
   % Valid-Linie neu zeichnen. Ursachen: 
@@ -246,7 +246,7 @@ for i_stage1 = 1:length(DP_settings.IE)-1
     Iplot = select_plot_indices_downsample_nonuniform(...
       s_stage(1:length(d_ii.X6_traj)), d_ii.X6_traj, 0.05, 3*pi/180);
     hdl = plot(s_stage(Iplot), 180/pi*d_ii.X6_traj(Iplot), 'c-', 'LineWidth', 1);
-    if usr_stageoptmode && i_state2 > size(d_final.I_all,2)
+    if usr_stageoptmode && i_state2 > length(phi_range)
       set(hdl, 'LineStyle', '--'); % Teil der neu optimierten Linien
       DP_hdl(4) = hdl;
     end
