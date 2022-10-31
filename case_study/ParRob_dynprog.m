@@ -845,7 +845,7 @@ for i_dpred = 1:5 % Different settings for DP
     'use_free_stage_transfer', freetransfer, ...
     'overlap', overlap, ... % Überlappende Intervalle
     'stageopt_posik', stageopt_posik, ... % Nach-Optimierung mit Positions-IK
-    'debug', false, ...
+    'debug', true, ...
     'fastdebug', false, ... % true: damit Verzicht auf Prüfung und schnelleres Zeichnen
     'phi_lim_x0_dependent', false, ... % true: Grenzen abhängig von phi0 wählen
     'continue_saved_state', false, ...
@@ -947,7 +947,7 @@ for i_dpred = 1:5 % Different settings for DP
 end
 
 %% IK für Trajektorie berechnen (Vorbereitung)
-return
+
 RP.update_EE_FG(I_EE_full, I_EE_red);
 % Abspeichern der Gelenkwinkel für verschiedene Varianten der Berechnung
 Namen_Methoden = cell(1,5);
