@@ -298,12 +298,12 @@ xlim(minmax2(DP_settings.PM_s_tref'));
 ylim([-70, 130]);
 set(Hdl_all.cb, 'Position', [0.90, 0.03, 0.02, 0.9]); % put cb to the right
 cyh=ylabel(Hdl_all.cb, 'Performance criterion $h$ (cond.)', 'Rotation', 90, 'interpreter', 'latex');
-set(cyh, 'Position', [3.3, 620, 0]); % put cblabel to the left
+set(cyh, 'Position', [3.3, 500, 0]); % put cblabel to the left
 figure_format_publication(pmfhdl);
 set_size_plot_subplot(pmfhdl, ...
-  16,5,gca,...
-  0.06,0.12,0.13,0.16,... %l r u d
-  0.0,0) % x y
+  12.2,5,gca,... % 12.2 according to llncs.cls
+  0.09,0.12,0.14,0.16,... %l r u d
+  0.00,0) % x y
 drawnow();
 % Legende
 I_vmactive = [2 4]; % Manuelle Auswahl der aktiven Marker. Referenz: s_pmp.violation_markers
