@@ -36,9 +36,9 @@ phiz_range = d.phiz_range;
 s_ref = d.s_ref;
 s_tref = d.s_tref;
 if ~usr_overlapmode % Standard-Modus ohne überlappende Intervalle
-  filename_post = ['_dynprog_costRMStraj_n9_red', '', '.mat'];
+  filename_post = '_dynprog_costRMStraj_n9_red_phi0fix.mat';
 else % Mit überlappenden Intervallen
-  filename_post = ['_dynprog_costRMStraj_n7_red_overlap', '', '.mat'];
+  filename_post = '_dynprog_costRMStraj_n7_red_overlap_phi0fix.mat';
 end
 filename_dynprog= fullfile(data_path, [filename_pre, filename_post]);
 assert(exist(filename_dynprog, 'file'), 'dynamic programming results file does not exist');
@@ -49,9 +49,9 @@ DP_TrajDetail = d.DP_TrajDetail;
 DP_settings = d.DP_settings;
 overlapstr = '';
 if ~usr_overlapmode 
-  debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n9_red';
+  debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n9_red_phi0fix';
 else
-  debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n7_red_overlap';
+  debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n7_red_overlap_phi0fix';
   overlapstr= '_overlap';
 end
 dpres_dir = fullfile(this_dir, '..', '..', 'case_study', debugfoldername_full);

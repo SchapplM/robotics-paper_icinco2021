@@ -37,9 +37,9 @@ phiz_range = d.phiz_range;
 s_ref = d.s_ref;
 s_tref = d.s_tref;
 if ~usr_stageoptmode
-  filename_post = ['_dynprog_costRMStraj_n9_', 'nored', '', '.mat'];
+  filename_post = '_dynprog_costRMStraj_n9_nored_phi0fix.mat';
 else
-  filename_post = ['_dynprog_costRMStraj_n9_', 'nored', '_stageopt', '.mat'];
+  filename_post = '_dynprog_costRMStraj_n9_nored_stageopt_phi0fix.mat';
 end
 filename_dynprog= fullfile(data_path, [filename_pre, filename_post]);
 assert(exist(filename_dynprog, 'file'), 'dynamic programming results file does not exist');
@@ -50,9 +50,9 @@ DP_TrajDetail = d.DP_TrajDetail;
 DP_settings = d.DP_settings;
 stageoptstr = '';
 if ~usr_stageoptmode 
-  debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n9_nored';
+  debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n9_nored_phi0fix';
 else
-  debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n9_nored_stageopt';
+  debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n9_nored_stageopt_phi0fix';
   stageoptstr= '_stageopt';
 end
 dpres_dir = fullfile(this_dir, '..', '..', 'case_study', debugfoldername_full);
