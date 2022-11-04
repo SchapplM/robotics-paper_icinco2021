@@ -11,12 +11,14 @@ clc
 clear
 % User settings
 usr_highres_distrfig = true; % high resolution of the paper figure for performance criterion map
-usr_overlapmode = true; % Switch between Sect. 4.2 and 4.3
+usr_overlapmode = false; % Switch between Sect. 4.2 and 4.3
 %% Initialize
 % Initialize Robot
+% Default output directory (for paper)
 paperfig_path = fileparts(which('fig_dynprog_interv_example.m'));
-assert(~isempty(paperfig_path), 'The script currently run has to be in the PATH');
-data_path = fullfile(paperfig_path, '..', '..', 'case_study', 'data_LNEE');
+this_dir = fileparts(which('fig_dynprog_interv_example.m'));
+assert(~isempty(this_dir), 'The script currently run has to be in the PATH');
+data_path = fullfile(this_dir, '..', '..', 'case_study', 'data_LNEE');
 d = load(fullfile(data_path, 'robot_definition.mat'));
 RP = d.RP;
 parroblib_addtopath({RP.mdlname});
@@ -34,9 +36,9 @@ phiz_range = d.phiz_range;
 s_ref = d.s_ref;
 s_tref = d.s_tref;
 if ~usr_overlapmode % Standard-Modus ohne überlappende Intervalle
-  filename_post = ['_dynprog_costRMStraj_n9_red', '', '.mat'];
+  filename_post = '_dynprog_costRMStraj_n9_red_phi0fix.mat';
 else % Mit überlappenden Intervallen
-  filename_post = ['_dynprog_costRMStraj_n5_red_overlap', '', '.mat'];
+  filename_post = '_dynprog_costRMStraj_n7_red_overlap_phi0fix.mat';
 end
 filename_dynprog= fullfile(data_path, [filename_pre, filename_post]);
 assert(exist(filename_dynprog, 'file'), 'dynamic programming results file does not exist');
@@ -47,12 +49,12 @@ DP_TrajDetail = d.DP_TrajDetail;
 DP_settings = d.DP_settings;
 overlapstr = '';
 if ~usr_overlapmode 
-  debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n9_red';
+  debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n9_red_phi0fix';
 else
-  debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n5_red_overlap';
+  debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n7_red_overlap_phi0fix';
   overlapstr= '_overlap';
 end
-dpres_dir = fullfile(paperfig_path, '..', '..', 'case_study', debugfoldername_full);
+dpres_dir = fullfile(this_dir, '..', '..', 'case_study', debugfoldername_full);
 % Use saved data in project folder
 % dpres_dir = fullfile(fileparts(which('robsynth_projektablage_path.m')), ...
 %   '06_Publikationen/2022_LNEE_3T2R_DynProg/DP_Ergebnisse/LNEE_DP_debug_costRMStraj_n9_red');
@@ -61,10 +63,11 @@ dpres_dir = fullfile(paperfig_path, '..', '..', 'case_study', debugfoldername_fu
 %     '06_Publikationen/2022_LNEE_3T2R_DynProg/DP_Ergebnisse/LNEE_DP_debug_costRMStraj_n9_red'];
 assert(exist(dpres_dir, 'file'), 'directory with debug information for DP does not exist');
 
-% Eigenschaften der Intervalle neu berechnen. Siehe dynprog_taskred_ik
-phi_range = linspace(DP_settings.phi_min, DP_settings.phi_max, DP_settings.n_phi);
-delta_phi = phi_range(2)-phi_range(1);
-
+% Eigenschaften der Intervalle aus Ergebnis ausgeben lassen. Siehe dynprog_taskred_ik
+delta_phi = DP_Stats.delta_phi;
+phi_range = DP_Stats.phi_range;
+fprintf('%d reference interaval centers actually used with step size %1.1f°: [%s]°\n', ...
+  length(phi_range), 180/pi*delta_phi, disp_array(phi_range*180/pi, '%1.1f'));
 %% Prepare performance map plot
 % Umrechnung auf hnpos
 abort_thresh_hpos = NaN(RP.idx_ik_length.hnpos, 1);
@@ -96,7 +99,7 @@ for i_stage1 = [1 2] % create one figure for each of the first two stages
     if ~usr_overlapmode
       i_state2_range = [1 4 7];
     else % Wähle Zustände so aus, dass man die Überlappung sieht
-      i_state2_range = [3 4 8]; % 8 liegt zwischen 3 und 4 (da von 6 an neu beginnend)
+      i_state2_range = [3 4 9]; % 6 liegt zwischen 2 und 3 (da von 5 an neu beginnend)
     end
     i_state1 = 1;
   else
@@ -209,7 +212,8 @@ for i_stage1 = [1 2] % create one figure for each of the first two stages
     ... 'padding', [-3,-3,3], ... % Leerraum reduzieren
     'box', 'on');
   pdfname = sprintf('dp_interv%s_stage%d_3cases', overlapstr, i_stage1);
-  exportgraphics(pmfhdl, fullfile(paperfig_path, [pdfname, '.pdf']),'ContentType','vector') 
+  exportgraphics(pmfhdl, fullfile(paperfig_path, [pdfname, '.pdf']),'ContentType','vector');
+  fprintf('Bild gespeichert: %s\n', pdfname);
   cd(paperfig_path);
   ghostscript(['-dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 ', ...
     '-dPDFSETTINGS=/prepress -sOutputFile=',pdfname,'_compressed.pdf ',pdfname,'.pdf']);
@@ -235,7 +239,7 @@ for i_stage1 = 1:length(axhdl)
   d_state = load(fullfile(dpres_dir, sprintf('dp_stage%d_final.mat', i_stage1)));
   tfn = dir(fullfile(dpres_dir, sprintf('dp_stage%d_state*_to*_result.mat', i_stage1)));
   % Gehe alle Transfers durch, die gespeichert sind
-  hdl_all = NaN(length(tfn), 2);
+  hdl_all = NaN(length(tfn), 2); % Erste Spalte Handle, zweite Spalte Kategorie als Zahl
   for ii = 1:length(tfn)
     d_ii = load(fullfile(dpres_dir, tfn(ii).name));
     i_state1 = d_ii.k;
@@ -245,28 +249,26 @@ for i_stage1 = 1:length(axhdl)
       s_stage(1:length(d_ii.X6_traj)), d_ii.X6_traj, 0.03, 2*pi/180);
     hdl_all(ii,1) = plot(s_stage(Iplot), 180/pi*d_ii.X6_traj(Iplot), 'k-');
     set(hdl_all(ii,1), 'LineWidth', 1);
-    if usr_overlapmode && i_state2 > size(d_final.I_all,2)
+    if usr_overlapmode && i_state2 > length(phi_range)
       set(hdl_all(ii,1), 'LineStyle', '--'); % Teil der überlappenden Linien
     end
     % Prüfe ob es sich um die optimale Teil-Politik handelt
-    if i_state2 <= size(d_final.I_all,2) && d_final.I_all(i_stage1+1,i_state2) == i_state1
+    if d_final.I_all(i_stage1+1,i_state2) == i_state1
       hdl_all(ii,2) = 1;
       set(hdl_all(ii,1), 'Color', 'm');
-      if i_state2 <= size(d_final.I_all,2)
+      if i_state2 <= length(phi_range)
         DP_hdl(3) = hdl_all(ii,1); % optimal transmission (to this stage)
       end
     elseif ~isinf(d_state.F_stage(i_state1, i_state2))
       hdl_all(ii,2) = 2;
       set(hdl_all(ii,1), 'Color', 'c');
-      if i_state2 <= size(d_final.I_all,2)
+      if i_state2 <= length(phi_range)
         DP_hdl(2) = hdl_all(ii,1); % line for valid transition
       end
     else
       hdl_all(ii,2) = 3;
-      if i_state2 <= size(d_final.I_all,2)
+      if i_state2 <= length(phi_range)
         DP_hdl(1) = hdl_all(ii,1); % line for invalid transition
-      else
-        DP_hdl(4) = hdl_all(ii,1); % for overlap legend entry
       end
     end
   end
@@ -296,8 +298,11 @@ for i_stage1 = 1:length(axhdl)
     end
   end
   if usr_overlapmode == 0 % Achsbeschriftung rechts
-    text(i_stage1+0.07, 180/pi*phi_range(8)-35, '$[x_{\mathrm{ref},8}]$', ...
-      'Rotation', 90, 'interpreter', 'latex'); % Legende für rechte Achse
+%     text(i_stage1+0.07, 180/pi*phi_range(8)-35, '$[x_{\mathrm{ref},8}]$', ...
+%       'Rotation', 90, 'interpreter', 'latex'); % Legende für rechte Achse
+  end
+  if usr_overlapmode % Legendeneintrag für überlappende Intervalle
+    DP_hdl(4) = plot(NaN,NaN,'k--', 'LineWidth', 2);
   end
   quiver(i_stage1*ones(1,length(phi_range)), 180/pi*phi_range, ...
     zeros(1,length(phi_range)),  180/pi*0.9*delta_phi/2*ones(1,length(phi_range)), 'off', 'k.', 'LineWidth', 1);
@@ -342,7 +347,7 @@ if usr_overlapmode == 0
   LegLbl{strcmp(LegLbl,'jac_cond')} = 'singularity';
   LegLbl{strcmp(LegLbl,'coll_hyp')} = 'collision';
 else
-  LegHdl = [DP_hdl; VM_hdl(I_vmactive)];
+  LegHdl = [DP_hdl(1:4); VM_hdl(I_vmactive)];
   LegLbl = ['invalid', 'valid', 'optimal', 'add. overlap', s_pmp.violation_markers(1,I_vmactive)];
   LegLbl{strcmp(LegLbl,'jac_cond')} = 'sing.'; % Shorter text
   LegLbl{strcmp(LegLbl,'coll_hyp')} = 'coll.';
@@ -358,7 +363,8 @@ legendflex(LegHdl, LegLbl, 'anchor', {'n','n'}, ...
   ... 'padding', [-3,-3,3], ... % Leerraum reduzieren
   'box', 'on');
 pdfname = ['dp_interv', overlapstr, '_stage1_to_2'];
-exportgraphics(pmfhdl, fullfile(paperfig_path, [pdfname, '.pdf']),'ContentType','vector') 
+exportgraphics(pmfhdl, fullfile(paperfig_path, [pdfname, '.pdf']),'ContentType','vector');
+fprintf('Bild gespeichert: %s\n', pdfname);
 cd(paperfig_path);
 ghostscript(['-dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 ', ...
   '-dPDFSETTINGS=/prepress -sOutputFile=',pdfname,'_compressed.pdf ',pdfname,'.pdf']);
@@ -394,18 +400,29 @@ for i_stage1 = 1:length(DP_settings.IE)-1
     Iplot = select_plot_indices_downsample_nonuniform(...
       s_stage(1:length(d_ii.X6_traj)), d_ii.X6_traj, 0.05, 3*pi/180);
     hdl = plot(s_stage(Iplot), 180/pi*d_ii.X6_traj(Iplot), 'c-', 'LineWidth', 1);
+    if usr_overlapmode && i_state2 > length(phi_range)
+      set(hdl, 'LineStyle', '--'); % Teil der neu optimierten Linien
+      DP_hdl(4) = hdl;
+    end
     if d_final.I_best(i_stage1) == i_state1 && ...
         d_final.I_best(i_stage1+1) == i_state2
       set(hdl, 'Color', 'b');
       set(hdl, 'LineWidth', 1.5);
-      DP_hdl(3) = hdl; % optimal transmission (globally)
-    elseif i_state2 <= size(d_final.I_all,2) &&  d_final.I_all(i_stage1+1,i_state2) == i_state1
+      if i_state2 <= length(phi_range)
+        DP_hdl(3) = hdl; % optimal transmission (globally)
+      end
+    elseif d_final.I_all(i_stage1+1,i_state2) == i_state1
       DP_hdl(2) = hdl; % optimal transmission (to this stage)
       set(DP_hdl(2), 'Color', 'm');
     else
-      DP_hdl(1) = hdl;
+      if i_state2 <= length(phi_range)
+        DP_hdl(1) = hdl;
+      end
     end
   end
+end
+if usr_overlapmode % Legendeneintrag für überlappende Intervalle
+  DP_hdl(4) = plot(NaN,NaN,'k--', 'LineWidth', 2);
 end
 % Plot nachbearbeiten
 axch = get(gca, 'children');
@@ -444,11 +461,22 @@ set_size_plot_subplot(pmfhdl, ...
 drawnow();
 % Legende
 I_vmactive = [2 4]; % Manuelle Auswahl der aktiven Marker. Referenz: s_pmp.violation_markers
-LegHdl = [DP_hdl; VM_hdl(I_vmactive)];
-LegLbl = ['valid', 'stage opt.', 'global opt.',s_pmp.violation_markers(1,I_vmactive)];
+
+if usr_overlapmode == 0
+  LegHdl = [DP_hdl(1:3); VM_hdl(I_vmactive)];
+  LegLbl = ['valid', 'stage opt.', 'global opt.',s_pmp.violation_markers(1,I_vmactive)];
+  LegLbl{strcmp(LegLbl,'jac_cond')} = 'singularity';
+  LegLbl{strcmp(LegLbl,'coll_hyp')} = 'collision';
+else
+  LegHdl = [DP_hdl(1:4); VM_hdl(I_vmactive)];
+  LegLbl = ['valid', 'stage opt.', 'global opt.','add. overlap', s_pmp.violation_markers(1,I_vmactive)];
+  % Text kürzer. Sonst gehen die langen Striche in der Legende nicht und
+  % die Strichelung ist dort falsch.
+  LegLbl{strcmp(LegLbl,'jac_cond')} = 'sing.';
+  LegLbl{strcmp(LegLbl,'coll_hyp')} = 'coll.';
+end
+
 % LegLbl{strcmp(LegLbl,'qlim_hyp')} = 'joint limit';
-LegLbl{strcmp(LegLbl,'jac_cond')} = 'singularity';
-LegLbl{strcmp(LegLbl,'coll_hyp')} = 'collision';
 legendflex(LegHdl, LegLbl, 'anchor', {'n','n'}, ...
   'ref', pmfhdl, ... % an Figure ausrichten (mitten oben)
   'buffer', [0 -1], ... % Kein Versatz notwendig, da mittig oben
@@ -458,7 +486,8 @@ legendflex(LegHdl, LegLbl, 'anchor', {'n','n'}, ...
   ...'padding', [1,1,2], ... % Leerraum reduzieren
   'box', 'on');
 pdfname = ['dp_interv', overlapstr, '_result'];
-exportgraphics(pmfhdl, fullfile(paperfig_path, [pdfname,'.pdf']),'ContentType','vector') % ,'Resolution','100'
+exportgraphics(pmfhdl, fullfile(paperfig_path, [pdfname,'.pdf']),'ContentType','vector'); % ,'Resolution','100'
+fprintf('Bild gespeichert: %s\n', pdfname);
 cd(paperfig_path);
 ghostscript(['-dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 ', ...
   '-dPDFSETTINGS=/prepress -sOutputFile=',pdfname,'_compressed.pdf ',pdfname,'.pdf']);

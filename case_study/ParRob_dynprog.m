@@ -25,8 +25,8 @@ usr_create_anim = false; % create an animation video of the robot motion
 usr_anim_realtime = false; % save real-time animation (video as long as trajectory in seconds)
 usr_highres_distrfig = true; % high resolution of the paper figure for performance criterion map
 debug_plot = false;% Create debug plots
-usr_plot_robot = true; % Robot image for paper.
-usr_save_figures = true; % save figures to disk
+usr_plot_robot = false; % Robot image for paper.
+usr_save_figures = false; % save figures to disk
 usr_load_discretization = true; % load a previously computed performance map (if trajectory stays the same)
 usr_load_dynprog = true;
 usr_load_traj = true; % load a previously computed joint space trajectory
@@ -776,9 +776,10 @@ end
 fprintf('Best platform orientation in starting pose of trajectory: %1.0fdeg\n', 180/pi*x1(6));
 
 %% Compute trajektory with dynamic programming
-for i_dpred = [1 2 3 4] % Different settings for DP
+for i_dpred = 1:5 % Different settings for DP
   overlap = false;
   freetransfer = false;
+  stageopt_posik = false;
   if i_dpred == 1 % from Sect. 4.1
     % no redundancy in dynamic programming
     n_phi = 1+360/45; % wide discretization like SI-DP: 45°
@@ -794,17 +795,21 @@ for i_dpred = [1 2 3 4] % Different settings for DP
     RP.update_EE_FG(I_EE_full, I_EE_red);
     suffix_red = 'red';
   elseif i_dpred == 4 % from Sect. 4.3; with overlapping intervals
-    n_phi = 1+360/90; % noch gröbere Diskretisierung (wegen Überlapp)
+    n_phi = 1+360/60; % gröbere Diskretisierung (wegen Überlapp)
     RP.update_EE_FG(I_EE_full, I_EE_red);
     suffix_red = 'red';
     overlap = true;
-    freetransfer = false;
+    freetransfer = false; % TODO: In Auswertung diskutieren?
+  elseif i_dpred == 5 % Additional evaluation for PhD thesis (stage optimization)
+    n_phi = 1+360/45; % nur grobe Diskretisierung
+    RP.update_EE_FG(I_EE_full, I_EE_full);
+    suffix_red = 'nored'; % Nutze Redundanz nur mit Positions-IK auf Stufe
+    stageopt_posik = true;
   else
     error('Fall nicht definiert');
   end
-  fprintf('DP with setting "%s", overlap=%d and %d states:\n', suffix_red, overlap, n_phi);
+  fprintf('DP with setting "%s", overlap=%d and max. %d states:\n', suffix_red, overlap, n_phi);
   % String für Namen der zu speichernden Dateien
-  use_free_stage_transfer = true;
   wn_traj_default = zeros(RP.idx_ik_length.wntraj,1);
   wn_traj_default(RP.idx_iktraj_wnP.qlim_hyp) = 1; % K_P (hyperb. limit)
   wn_traj_default(RP.idx_iktraj_wnD.qlim_hyp) = 0.6; % K_D (limit)
@@ -839,7 +844,10 @@ for i_dpred = [1 2 3 4] % Different settings for DP
     'wn', wnpos_dp, ...
     'use_free_stage_transfer', freetransfer, ...
     'overlap', overlap, ... % Überlappende Intervalle
+    'stageopt_posik', stageopt_posik, ... % Nach-Optimierung mit Positions-IK
     'debug', true, ...
+    'fastdebug', false, ... % true: damit Verzicht auf Prüfung und schnelleres Zeichnen
+    'phi_lim_x0_dependent', false, ... % true: Grenzen abhängig von phi0 wählen
     'continue_saved_state', false, ...
     'settings_ik', s_Traj, ...
     'cost_mode', 'RMStraj', ... % Alternative: 'max', 'RMStime', 'average'
@@ -860,11 +868,17 @@ for i_dpred = [1 2 3 4] % Different settings for DP
   if overlap
     suffix = [suffix, '_overlap']; %#ok<AGROW> 
   end
+  if stageopt_posik
+    suffix = [suffix, '_stageopt']; %#ok<AGROW> 
+  end
+  if ~DP_settings.phi_lim_x0_dependent
+    suffix = [suffix, '_phi0fix']; %#ok<AGROW> 
+  end
   DP_settings.debug_dir = fullfile(respath, sprintf('LNEE_Traj%d_DP_debug_%s', usr_trajnum, suffix));
-  mkdirs(DP_settings.debug_dir);
   filename_dynprog= fullfile(data_path, [filename_pre, '_dynprog_', suffix, '.mat']);
   dynprog_loaded_offline = false;
-  if usr_load_dynprog && ~exist(filename_dynprog, 'file')
+  if usr_load_dynprog && (~exist(filename_dynprog, 'file') || ...
+      ~exist(DP_settings.debug_dir, 'file'))
     fprintf('Unable to load discretization results from %s\n', filename_dynprog);
   elseif usr_load_dynprog && exist(filename_dynprog, 'file')
     d = load(filename_dynprog);
@@ -875,17 +889,23 @@ for i_dpred = [1 2 3 4] % Different settings for DP
         DP_settings.n_phi ~= d.DP_settings.n_phi
       warning('IK settings from loaded results are different. Disregard');
     elseif ~isfield(d, 'collchecks') || size(d.collchecks,1)~=size(RP.collchecks,1) || ...
-      any(any(d.collchecks-RP.collchecks))
+        any(any(d.collchecks-RP.collchecks))
       warning('Collision checks loaded from results do not match. Disregard.');
     elseif ~isfield(d, 'collbodies_params') || size(d.collbodies_params,1)~=size(RP.collbodies.params,1) || ...
-      any(any(abs(d.collbodies_params-RP.collbodies.params) > 1e-10))
+        any(any(abs(d.collbodies_params-RP.collbodies.params) > 1e-10))
       warning('Collision bodes loaded from results do not match. Disregard.');
+    elseif ~isfield(d.DP_Stats, 'phi_range')
+      warning('DP output DP_Stats has no field phi_range. Disregard.');
     else
       DP_XE = d.DP_XE;
       DP_Stats = d.DP_Stats;
       DP_TrajDetail = d.DP_TrajDetail;
       dynprog_loaded_offline = true;
     end
+  end
+  mkdirs(DP_settings.debug_dir);
+  if ~exist(DP_settings.debug_dir, 'file')
+    error('Debug-Ordner existiert nicht. Fehler mit Sym-Link?');
   end
   if ~dynprog_loaded_offline
     t1 = tic();
@@ -918,12 +938,16 @@ for i_dpred = [1 2 3 4] % Different settings for DP
   elseif i_dpred == 4
     DP_TrajDetail_redol = DP_TrajDetail;
     DP_XE_redol = DP_XE;
+  elseif i_dpred == 5
+    DP_TrajDetail_redso = DP_TrajDetail;
+    DP_XE_redso = DP_XE;
   else
     error('Fall nicht definiert');
   end
 end
 
 %% IK für Trajektorie berechnen (Vorbereitung)
+
 RP.update_EE_FG(I_EE_full, I_EE_red);
 % Abspeichern der Gelenkwinkel für verschiedene Varianten der Berechnung
 Namen_Methoden = cell(1,5);
@@ -941,7 +965,11 @@ qlim_backup = cat(1, RP.Leg.qlim);
 qDlim_backup = cat(1, RP.Leg.qDlim); % damit überschriebene Werte wieder ...
 qDDlim_backup = cat(1, RP.Leg.qDDlim); % ... hergestellt werden können
 
-filename_traj = fullfile(data_path, [filename_pre, '_traj.mat']);
+filename_traj = fullfile(data_path, filename_pre);
+if ~DP_settings.phi_lim_x0_dependent
+  filename_traj = [filename_traj, '_phi0fix'];
+end
+filename_traj = [filename_traj, '_traj.mat'];
 if usr_load_traj && ~exist(filename_traj, 'file')
   warning('Unable to load trajectory results from %s', filename_traj);
   usr_load_traj = false;
@@ -1116,9 +1144,8 @@ for kk = 1:length(Namen_Methoden)*(~usr_load_traj)
 end
 
 if ~usr_load_traj
-  save(fullfile(data_path, [filename_pre, '_traj.mat']), 'Q_t_all', 'QD_t_all', ...
-    'QDD_t_all', 'XE_all', 'XDE_all', 'Q_t_norm_all', 'Hcond_all', ...
-    'Namen_Methoden', 'Namen_Methoden_Leg_Paper');
+  save(filename_traj, 'Q_t_all', 'QD_t_all', 'QDD_t_all', 'XE_all', ...
+    'XDE_all', 'Q_t_norm_all', 'Hcond_all', 'Namen_Methoden', 'Namen_Methoden_Leg_Paper');
 end
 % For Debugging
 save(fullfile(data_path, [filename_pre, '_all_data.mat']));

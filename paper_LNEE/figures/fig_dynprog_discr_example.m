@@ -12,11 +12,14 @@ clc
 clear
 % User settings
 usr_highres_distrfig = true; % high resolution of the paper figure for performance criterion map
+usr_stageoptmode = false;
 %% Initialize
 % Initialize Robot
+% Default output directory (for paper)
 paperfig_path = fileparts(which('fig_dynprog_discr_example.m'));
-assert(~isempty(paperfig_path), 'The script currently run has to be in the PATH');
-data_path = fullfile(paperfig_path, '..', '..', 'case_study', 'data_LNEE');
+this_dir = fileparts(which('fig_dynprog_discr_example.m'));
+assert(~isempty(this_dir), 'The script currently run has to be in the PATH');
+data_path = fullfile(this_dir, '..', '..', 'case_study', 'data_LNEE');
 d = load(fullfile(data_path, 'robot_definition.mat'));
 RP = d.RP;
 parroblib_addtopath({RP.mdlname});
@@ -33,16 +36,33 @@ XL = d.XL;
 phiz_range = d.phiz_range;
 s_ref = d.s_ref;
 s_tref = d.s_tref;
-filename_dynprog= fullfile(data_path, [filename_pre, '_dynprog_costRMStraj_n9_', 'nored', '', '.mat']);
+if ~usr_stageoptmode
+  filename_post = '_dynprog_costRMStraj_n9_nored_phi0fix.mat';
+else
+  filename_post = '_dynprog_costRMStraj_n9_nored_stageopt_phi0fix.mat';
+end
+filename_dynprog= fullfile(data_path, [filename_pre, filename_post]);
 assert(exist(filename_dynprog, 'file'), 'dynamic programming results file does not exist');
 d = load(filename_dynprog);
 DP_XE = d.DP_XE;
 DP_Stats = d.DP_Stats;
 DP_TrajDetail = d.DP_TrajDetail;
 DP_settings = d.DP_settings;
-dpres_dir = fullfile(paperfig_path, '..', '..', 'case_study', 'LNEE_Traj1_DP_debug_costRMStraj_n9_nored');
+stageoptstr = '';
+if ~usr_stageoptmode 
+  debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n9_nored_phi0fix';
+else
+  debugfoldername_full = 'LNEE_Traj1_DP_debug_costRMStraj_n9_nored_stageopt_phi0fix';
+  stageoptstr= '_stageopt';
+end
+dpres_dir = fullfile(this_dir, '..', '..', 'case_study', debugfoldername_full);
 assert(exist(dpres_dir, 'file'), 'directory with debug information for DP does not exist');
 
+% Eigenschaften der Intervalle aus Ergebnis ausgeben lassen. Siehe dynprog_taskred_ik
+delta_phi = DP_Stats.delta_phi;
+phi_range = DP_Stats.phi_range;
+fprintf('%d reference states actually used with step size %1.1f°: [%s]°\n', ...
+  length(phi_range), 180/pi*delta_phi, disp_array(phi_range*180/pi, '%1.1f'));
 %% Prepare performance map plot
 % Umrechnung auf hnpos
 abort_thresh_hpos = NaN(RP.idx_ik_length.hnpos, 1);
@@ -58,15 +78,19 @@ settings_perfmap = struct( ...
   'extend_map', false, ... % sowieso nicht sichtbar
   'wn', DP_settings.wn, ...
   'abort_thresh_h', abort_thresh_hpos);
-d_final = load(fullfile(dpres_dir, 'dp_final.mat'), 'I_all');
+d_final = load(fullfile(dpres_dir, 'dp_final.mat'), 'I_all', 'I_best');
 %% Plot performance map with three first stages (Figure 3 of the paper)
 fprintf('Zeichne Bilder für DP Einzeltransfer\n');
 pmfhdl = change_current_figure(1); clf;
+set(pmfhdl, 'Name', sprintf('DP_Stage1to3_%s', stageoptstr), 'NumberTitle', 'off');
+ 
 axhdl = NaN(1,3);
 DP_hdl = NaN(3,1); % Handle für die verschiedenen Linien (für Legende)
-for i_stage1 = 1:3
+plotnum = 0;
+for i_stage1 = 1:3 % 4:6
+  plotnum = plotnum + 1;
   s_stage = DP_settings.PM_s_tref(DP_settings.IE(i_stage1):DP_settings.IE(i_stage1+1));
-  axhdl(i_stage1) = subplot(1,3,i_stage1); hold on;
+  axhdl(plotnum) = subplot(1,3,plotnum); hold on;
   settings_perfmap_stage = settings_perfmap;
   settings_perfmap_stage.s_range_plot = minmax2(s_stage') + [-0.1, 0.1];
   t1 = tic();
@@ -78,6 +102,8 @@ for i_stage1 = 1:3
   d_state = load(fullfile(dpres_dir, sprintf('dp_stage%d_final.mat', i_stage1)));
   tfn = dir(fullfile(dpres_dir, sprintf('dp_stage%d_state*_to*_result.mat', i_stage1)));
   % Gehe alle Transfers durch, die gespeichert sind
+  % TODO: auch magenta-gestrichelt zulassen (im Beispiel nicht vorhanden)
+  hdl_all = NaN(length(tfn), 2); % Erste Spalte Handle, zweite Spalte Kategorie als Zahl 
   for ii = 1:length(tfn)
     d_ii = load(fullfile(dpres_dir, tfn(ii).name));
     i_state1 = d_ii.k;
@@ -87,40 +113,73 @@ for i_stage1 = 1:3
     Iplot = select_plot_indices_downsample_nonuniform(...
       s_stage(1:length(d_ii.X6_traj)), d_ii.X6_traj, 0.05, 3*pi/180);
 %     hdl = plot(s_stage(1:length(d_i.X6_traj)), 180/pi*d_i.X6_traj, 'k--'); % TODO: _ref
-    hdl = plot(s_stage(Iplot), 180/pi*d_ii.X6_traj(Iplot), 'k-');
-    set(hdl, 'LineWidth', 1);
+    hdl_all(ii,1) = plot(s_stage(Iplot), 180/pi*d_ii.X6_traj(Iplot), 'k-');
+    set(hdl_all(ii,1), 'LineWidth', 1);
+%     if length(d_ii.X6_traj) == length(d_ii.X6_traj_ref) && ...
+%         all(abs(d_ii.z_l - phi_range) > 1e-6)
+%       % Muss zusätzlicher Zustand sein, da nicht in diskretem Zielzustand
+%       set(hdl_all(ii,1), 'LineStyle', '--');
+%       DP_hdl(4) = hdl_all(ii,1);
+%     end
+    if usr_stageoptmode && i_state2 > length(phi_range)
+      set(hdl_all(ii,1), 'LineStyle', '--'); % Teil der neu optimierten Linien
+      DP_hdl(4) = hdl_all(ii,1);
+    end
     % Prüfe ob es sich um die optimale Teil-Politik handelt
     if d_final.I_all(i_stage1+1,i_state2) == i_state1
-      set(hdl, 'Color', 'm');
-      DP_hdl(3) = hdl; % optimal transmission (to this stage)
+      hdl_all(ii,2) = 1;
+      set(hdl_all(ii,1), 'Color', 'm');
+      if i_state2 <= length(phi_range)
+        DP_hdl(3) = hdl_all(ii,1); % optimal transmission (to this stage)
+      end
     elseif ~isinf(d_state.F_stage(i_state1, i_state2))
-      set(hdl, 'Color', 'c');
-      DP_hdl(2) = hdl; % line for valid transition
+      hdl_all(ii,2) = 2;
+      set(hdl_all(ii,1), 'Color', 'c');
+      if i_state2 <= length(phi_range)
+        DP_hdl(2) = hdl_all(ii,1); % line for valid transition
+      end
     else
-      DP_hdl(1) = hdl; % line for invalid transition
-      % Setze Linie ganz nach unten (damit i.O. immer oben sind)
-      ZOrderSet(hdl, 0);
-      % Farbkarte muss danach wieder nach unten gesetzt werden
-      ZOrderSet(Hdl_all.surf, 0);
+      hdl_all(ii,2) = 3;
+      DP_hdl(1) = hdl_all(ii,1); % line for invalid transition
     end
   end
+  % Valid-Linie neu zeichnen. Ursachen: 
+  % Es gibt keine "valid"-Linie, da alle Lösungen stage-optimal sind.
+  % Oder: Die Valid-Linie ist gestrichelt, bei stageopt-Modus
+  DP_hdl(2) = plot(NaN, NaN, 'c-', 'LineWidth', 1);
+  % Stage-Opt.-Linie für Legende (definierte Farbe)
+  if usr_stageoptmode
+    DP_hdl(4) = plot(NaN, NaN, 'k--', 'LineWidth', 1);
+  end
+  % Gehe alle Handles durch. Zuerst alle cyan nach hinten, dann alle
+  % schwarzen, dann Farbkarte
+  for ii = find(hdl_all(:,2)==2)' % 2=cyan
+    ZOrderSet(hdl_all(ii,1), 0); % Setze Linie ganz nach unten (damit optimale immer oben sind)
+  end
+  for ii = find(hdl_all(:,2)==3)' % 3=black
+    ZOrderSet(hdl_all(ii,1), 0); % Setze Linie ganz nach unten (damit i.O. immer oben sind)
+  end
+  % Farbkarte muss danach wieder nach unten gesetzt werden
+  ZOrderSet(Hdl_all.surf, 0);
   xlim(minmax2(s_stage'));
   ylim([-70, 130]);
-  if i_stage1 ~= 2
-    xlabel('');
-  else
-    xlabel('Normalized trajectory progress $s$', 'interpreter', 'latex');
-  end
-  if i_stage1 > 1
+
+  % Put text for state interval
+  if plotnum > 1
     ylabel('');
   else
     ylabel('Redundant coordinate $\varphi_z$ in deg', 'interpreter', 'latex');
   end
-  if i_stage1 < 3
+  if plotnum < length(axhdl)
     delete(colorbar());
   end
-  title(sprintf('\\textbf{(%s)} stage %d', char(96+i_stage1), i_stage1), ...
-    'interpreter', 'latex');
+  title(sprintf('\\textbf{(%s)} stage %d', char(96+plotnum), i_stage1), ...
+    'interpreter', 'latex'); % Beschriftung a,b,c
+  if plotnum ~= 2
+    xlabel('');
+  else
+    xlabel('Normalized trajectory progress $s$', 'interpreter', 'latex');
+  end
 end
 set(Hdl_all.cb, 'Position', [0.90, 0.03, 0.02, 0.95]); % put cb to the right
 cyh=ylabel(Hdl_all.cb, 'Performance criterion $h$ (cond.)', 'Rotation', 90, 'interpreter', 'latex');
@@ -135,22 +194,27 @@ set_size_plot_subplot(pmfhdl, ...
 drawnow();
 % Legende
 I_vmactive = [2 4]; % Manuelle Auswahl der aktiven Marker. Referenz: s_pmp.violation_markers
-LegHdl = [DP_hdl; VM_hdl(I_vmactive)];
-LegLbl = ['invalid', 'valid', 'optimal', s_pmp.violation_markers(1,I_vmactive)];
+if usr_stageoptmode == 0
+  LegHdl = [DP_hdl(1:3); VM_hdl(I_vmactive)];
+  LegLbl = ['invalid', 'valid', 'optimal', s_pmp.violation_markers(1,I_vmactive)];
+else
+  LegHdl = [DP_hdl(1:4); VM_hdl(I_vmactive)];
+  LegLbl = ['invalid', 'valid', 'optimal', 'add. stage opt.', s_pmp.violation_markers(1,I_vmactive)];
+end
 % LegLbl{strcmp(LegLbl,'qlim_hyp')} = 'Joint Limit';
 LegLbl{strcmp(LegLbl,'jac_cond')} = 'singularity';
 LegLbl{strcmp(LegLbl,'coll_hyp')} = 'collision';
 legendflex(LegHdl, LegLbl, 'anchor', {'n','n'}, ...
   'ref', pmfhdl, ... % an Figure ausrichten (mitten oben)
-  'buffer', [0 -1], ... % Kein Versatz notwendig, da mittig oben
+  'buffer', [-10*usr_stageoptmode, -1], ... % Versatz nach links notwendig notwendig
   'ncol', 0, 'nrow', 1, ... % eine Zeile für Legende
   'fontsize', 8, ...
   'xscale', 0.6, ... % Kleine Symbole
   ... 'padding', [-3,-3,3], ... % Leerraum reduzieren
   'box', 'on');
-pdfname = 'dp_discr_stage1_to_3';
+pdfname = sprintf('dp_discr%s_stage1_to_3', stageoptstr);
 exportgraphics(pmfhdl, fullfile(paperfig_path, [pdfname, '.pdf']),'ContentType','vector') 
-
+fprintf('Bild gespeichert: %s\n', pdfname);
 % Zur Kompression des Bildes (bringt ca. 30% bei hoher Auflösung):
 cd(paperfig_path);
 ghostscript(['-dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 ', ...
@@ -160,7 +224,8 @@ ghostscript(['-dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 ', ..
 fprintf('Zeichne gesamte Redundanzkarte für DP\n');
 settings_perfmap_complete = settings_perfmap;
 settings_perfmap_complete.markermindist = [0.2, 15]; % Größerer Markerabstand, da kleiner im Bild
-pmfhdl = change_current_figure(1); clf; hold on;
+pmfhdl = change_current_figure(3); clf; hold on;
+set(pmfhdl, 'Name', ['DP_Perfmap_All',stageoptstr], 'NumberTitle', 'off');
 DP_hdl = NaN(3,1); % Handle für die verschiedenen Linien (für Legende)
 t1 = tic();
 [Hdl_all, s_pmp] = RP.perfmap_plot(H_all, phiz_range, s_ref, settings_perfmap_complete);
@@ -185,7 +250,16 @@ for i_stage1 = 1:length(DP_settings.IE)-1
     Iplot = select_plot_indices_downsample_nonuniform(...
       s_stage(1:length(d_ii.X6_traj)), d_ii.X6_traj, 0.05, 3*pi/180);
     hdl = plot(s_stage(Iplot), 180/pi*d_ii.X6_traj(Iplot), 'c-', 'LineWidth', 1);
-    if d_final.I_all(i_stage1+1,i_state2) == i_state1
+    if usr_stageoptmode && i_state2 > length(phi_range)
+      set(hdl, 'LineStyle', '--'); % Teil der neu optimierten Linien
+      DP_hdl(4) = hdl;
+    end
+    if d_final.I_best(i_stage1) == i_state1 && ...
+        d_final.I_best(i_stage1+1) == i_state2
+      set(hdl, 'Color', 'b');
+      set(hdl, 'LineWidth', 1.5);
+      DP_hdl(3) = hdl; % optimal transmission (globally)
+    elseif i_state2 <= size(d_final.I_all,2) &&  d_final.I_all(i_stage1+1,i_state2) == i_state1
       DP_hdl(2) = hdl; % optimal transmission (to this stage)
       set(DP_hdl(2), 'Color', 'm');
     else
@@ -193,10 +267,31 @@ for i_stage1 = 1:length(DP_settings.IE)-1
     end
   end
 end
-d_output = load(fullfile(dpres_dir, 'dp_output.mat'), 'TrajDetail');
-Iplot = select_plot_indices_downsample_nonuniform(...
-  DP_settings.PM_s_tref, d_output.TrajDetail.X6, 0.05, 3*pi/180);
-DP_hdl(3) = plot(DP_settings.PM_s_tref, 180/pi*d_output.TrajDetail.X6, 'b-', 'LineWidth', 2);
+% Stage-Opt.-Linie für Legende (definierte Farbe)
+if usr_stageoptmode
+  DP_hdl(4) = plot(NaN, NaN, 'k--', 'LineWidth', 1);
+end
+% Plot nachbearbeiten
+axch = get(gca, 'children');
+% Setze alle nicht-optimalen Linien nach hinten
+for i = 1:length(axch)
+  if strcmp(get(axch(i),'type'), 'line') && all(get(axch(i), 'color') == [0 1 1]) % cyan
+    ZOrderSet(axch(i), 0);
+  end
+end
+% Setze die global optimale Linie ganz nach vorne
+for i = 1:length(axch)
+  if strcmp(get(axch(i),'type'), 'line') && all(get(axch(i), 'color') == [0 0 1]) % blau
+    ZOrderSet(axch(i), 1);
+  end
+end
+ZOrderSet(Hdl_all.surf,0); % Farbkarte wieder nach hinten
+% Nehme nicht die global-optimale Trajektorie aus Ergebnis-Datei, sondern
+% die von oben (sollte keinen Unterschied darstellen).
+% d_output = load(fullfile(dpres_dir, 'dp_output.mat'), 'TrajDetail');
+% Iplot = select_plot_indices_downsample_nonuniform(...
+%   DP_settings.PM_s_tref, d_output.TrajDetail.X6, 0.05, 3*pi/180);
+% DP_hdl(3) = plot(DP_settings.PM_s_tref, 180/pi*d_output.TrajDetail.X6, 'b-', 'LineWidth', 2);
 xlabel('Normalized trajectory progress $s$', 'interpreter', 'latex');
 ylabel('Redundant coordinate $\varphi_z$ in deg', 'interpreter', 'latex');
 xlim(minmax2(DP_settings.PM_s_tref'));
@@ -212,8 +307,14 @@ set_size_plot_subplot(pmfhdl, ...
 drawnow();
 % Legende
 I_vmactive = [2 4]; % Manuelle Auswahl der aktiven Marker. Referenz: s_pmp.violation_markers
-LegHdl = [DP_hdl; VM_hdl(I_vmactive)];
-LegLbl = ['valid', 'stage opt.', 'global opt.', s_pmp.violation_markers(1,I_vmactive)];
+if usr_stageoptmode == 0
+  LegHdl = [DP_hdl(1:3); VM_hdl(I_vmactive)];
+  LegLbl = ['valid', 'stage opt.', 'global opt.', s_pmp.violation_markers(1,I_vmactive)];
+else
+  LegHdl = [DP_hdl(1:4); VM_hdl(I_vmactive)];
+  LegLbl = ['valid', 'stage opt.', 'global opt.', 'add. stage opt.', s_pmp.violation_markers(1,I_vmactive)];
+end
+
 % LegLbl{strcmp(LegLbl,'qlim_hyp')} = 'joint limit';
 LegLbl{strcmp(LegLbl,'jac_cond')} = 'singularity';
 LegLbl{strcmp(LegLbl,'coll_hyp')} = 'collision';
@@ -225,8 +326,11 @@ legendflex(LegHdl, LegLbl, 'anchor', {'n','n'}, ...
   'xscale', 0.5, ... % Kleine Symbole
   'padding', [1,1,0], ... % Leerraum reduzieren
   'box', 'on');
-pdfname = 'dp_discr_result';
+pdfname = sprintf('dp_discr%s_result', stageoptstr);
+% TODO: Beide Export-Befehle führen bei Windows-Laptop zu Fehler.
 exportgraphics(pmfhdl, fullfile(paperfig_path, [pdfname, '.pdf']),'ContentType','vector') % ,'Resolution','100'
+export_fig(pmfhdl, fullfile(paperfig_path, [pdfname, '2.pdf']));
+fprintf('Bild gespeichert: %s\n', pdfname);
 cd(paperfig_path);
 ghostscript(['-dNOPAUSE -dBATCH -sDEVICE=pdfwrite -dCompatibilityLevel=1.4 ', ...
   '-dPDFSETTINGS=/prepress -sOutputFile=',pdfname,'_compressed.pdf ',pdfname,'.pdf']);
