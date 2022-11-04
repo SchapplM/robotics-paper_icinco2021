@@ -965,7 +965,11 @@ qlim_backup = cat(1, RP.Leg.qlim);
 qDlim_backup = cat(1, RP.Leg.qDlim); % damit überschriebene Werte wieder ...
 qDDlim_backup = cat(1, RP.Leg.qDDlim); % ... hergestellt werden können
 
-filename_traj = fullfile(data_path, [filename_pre, '_traj.mat']);
+filename_traj = fullfile(data_path, filename_pre);
+if ~DP_settings.phi_lim_x0_dependent
+  filename_traj = [filename_traj, '_phi0fix'];
+end
+filename_traj = [filename_traj, '_traj.mat'];
 if usr_load_traj && ~exist(filename_traj, 'file')
   warning('Unable to load trajectory results from %s', filename_traj);
   usr_load_traj = false;
@@ -1140,9 +1144,8 @@ for kk = 1:length(Namen_Methoden)*(~usr_load_traj)
 end
 
 if ~usr_load_traj
-  save(fullfile(data_path, [filename_pre, '_traj.mat']), 'Q_t_all', 'QD_t_all', ...
-    'QDD_t_all', 'XE_all', 'XDE_all', 'Q_t_norm_all', 'Hcond_all', ...
-    'Namen_Methoden', 'Namen_Methoden_Leg_Paper');
+  save(filename_traj, 'Q_t_all', 'QD_t_all', 'QDD_t_all', 'XE_all', ...
+    'XDE_all', 'Q_t_norm_all', 'Hcond_all', 'Namen_Methoden', 'Namen_Methoden_Leg_Paper');
 end
 % For Debugging
 save(fullfile(data_path, [filename_pre, '_all_data.mat']));
